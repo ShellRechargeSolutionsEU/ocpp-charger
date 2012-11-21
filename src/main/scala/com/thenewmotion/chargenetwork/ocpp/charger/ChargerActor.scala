@@ -7,7 +7,7 @@ import concurrent.duration._
 /**
  * @author Yaroslav Klymko
  */
-class ChargerActor(service: BosChargerService, numberOfConnectors: Int)
+class ChargerActor(service: BosChargerService, numberOfConnectors: Int = 1)
   extends Actor
   with LoggingFSM[ChargerActor.State, ChargerActor.Data] {
 
@@ -56,6 +56,7 @@ class ChargerActor(service: BosChargerService, numberOfConnectors: Int)
       service.notification(xb.Available)
       scheduleFault()
       goto(Available)
+    case Event(_: UserAction, _) => stay()
   }
 
   def startConnector(c: Int) {

@@ -1,7 +1,6 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
 import akka.actor.{Props, ActorSystem}
-
 import com.thenewmotion.chargenetwork.ocpp.CentralSystemServiceSoapBindings
 import scalaxb.{SoapClients, DispatchHttpClients}
 import concurrent.duration._
@@ -17,8 +16,8 @@ object OcppCharger extends App {
   }
 
   val numberOfConnectors = 2
-
-  val charger = system.actorOf(Props(new ChargerActor(BosChargerService(bindings.service), numberOfConnectors)))
+  val service = BosChargerService("00055103978E", bindings.service)
+  val charger = system.actorOf(Props(new ChargerActor(service, numberOfConnectors)))
 
   (0 until numberOfConnectors) map {
     c => system.actorOf(Props(new UserActor(charger, c, ActionIterator())))

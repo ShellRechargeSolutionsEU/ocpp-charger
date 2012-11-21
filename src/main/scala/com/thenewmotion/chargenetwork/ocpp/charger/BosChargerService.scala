@@ -37,12 +37,13 @@ trait BosConnectorService {
 }
 
 object BosChargerService {
-  def apply(service: xb.CentralSystemService): BosChargerService = new BosChargerServiceImpl(service)
+  def apply(chargerId: String, service: xb.CentralSystemService): BosChargerService =
+    new BosChargerServiceImpl(chargerId, service)
 }
 
-class BosChargerServiceImpl(val service: xb.CentralSystemService) extends BosChargerService with BosService {
-
-  def chargerId = "00055103978E"
+class BosChargerServiceImpl(val chargerId: String,
+                            val service: xb.CentralSystemService)
+  extends BosChargerService with BosService {
 
   def boot(): Int =
     service.bootNotification(
