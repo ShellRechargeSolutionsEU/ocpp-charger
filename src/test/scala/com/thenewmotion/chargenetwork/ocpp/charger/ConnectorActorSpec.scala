@@ -90,7 +90,6 @@ class ConnectorActorSpec extends SpecificationWithJUnit with Mockito {
       actor.setState(stateName = Charging, stateData = ChargingData(12345))
       system.shutdown()
       system.awaitTermination()
-      system.stop()
 
       there was one(service).stopSession(None, 12345)
     }
