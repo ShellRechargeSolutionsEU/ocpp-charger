@@ -19,7 +19,7 @@ Can be run standalone against Central System as ordinary charger.
 ```xml
     <dependency>
             <groupId>com.thenewmotion.chargenetwork</groupId>
-            <artifactId>ocpp-charger</artifactId>
-            <version>1.0</version>
+            <artifactId>ocpp-charger_2.10.0-RC2</artifactId>
+            <version>2.0-SNAPSHOT</version>
     </dependency>
 ```
