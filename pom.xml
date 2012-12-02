@@ -11,7 +11,7 @@
     </parent>
 
     <groupId>com.thenewmotion.chargenetwork</groupId>
-    <artifactId>ocpp-charger_${scala.version}</artifactId>
+    <artifactId>ocpp-charger_2.10.0-RC2</artifactId>
     <version>1.0-SNAPSHOT</version>
     <name>OCPP Charger</name>
     <description>Simple ocpp charger simulator</description>
