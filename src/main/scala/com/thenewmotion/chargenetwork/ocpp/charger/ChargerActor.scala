@@ -59,6 +59,8 @@ class ChargerActor(service: BosChargerService, numberOfConnectors: Int = 1)
     case Event(_: UserAction, _) => stay()
   }
 
+  initialize
+
   def startConnector(c: Int) {
     context.actorOf(Props(new ConnectorActor(service.connectorService(c))), c.toString)
   }
