@@ -64,7 +64,7 @@ class ChargerActorSpec extends SpecificationWithJUnit with Mockito {
       extends TestKit(ActorSystem("test"))
       with Scope {
       val numberOfConnectors = 2
-      val service = mock[BosChargerService]
+      val service = mock[BosService]
       val actor = TestFSMRef(new TestChargerActor)
       val card = "3E60A5E2"
 

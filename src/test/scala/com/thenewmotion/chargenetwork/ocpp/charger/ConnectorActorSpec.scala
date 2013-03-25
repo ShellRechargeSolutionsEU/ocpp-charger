@@ -19,14 +19,14 @@ class ConnectorActorSpec extends SpecificationWithJUnit with Mockito {
       actor.stateName mustEqual Available
       actor receive Plug
       actor.stateName mustEqual Connected
-      there was one(service).notification(xb.Occupied)
+      there was one(service).occupied()
     }
 
     "become available when plug disconnected" in new ConnectorActorScope {
       actor.setState(stateName = Connected)
       actor receive Unplug
       actor.stateName mustEqual Available
-      there was one(service).notification(xb.Available)
+      there was one(service).available()
     }
 
     "not start charging when card declined" in new ConnectorActorScope {
@@ -98,7 +98,7 @@ class ConnectorActorSpec extends SpecificationWithJUnit with Mockito {
   class ConnectorActorScope
     extends TestKit(ActorSystem("test"))
     with Scope {
-    val service = mock[BosConnectorService]
+    val service = mock[ConnectorService]
     val actor = TestFSMRef(new ConnectorActor(service))
     val rfid = "rfid"
   }

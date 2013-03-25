@@ -1,34 +1,29 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
 import akka.actor._
-import com.thenewmotion.chargenetwork.{ocpp => xb}
-import concurrent.duration._
+import akka.util.duration._
 
 /**
  * @author Yaroslav Klymko
  */
-class ChargerActor(service: BosChargerService, numberOfConnectors: Int = 1)
+class ChargerActor(service: BosService, numberOfConnectors: Int = 1)
   extends Actor
   with LoggingFSM[ChargerActor.State, ChargerActor.Data] {
 
   import ChargerActor._
-  import context.dispatcher
 
   override def preStart() {
-    val interval = service.boot()
-    service.notification(xb.Available)
-
+    val interval = service.boot() / 100
+    service.available()
     context.system.scheduler.schedule(1 second, interval seconds, self, Heartbeat)
     scheduleFault()
 
-    (0 until numberOfConnectors).map(x => startConnector(x))
+    (0 until numberOfConnectors).map(startConnector)
   }
 
   def scheduleFault() {
     context.system.scheduler.scheduleOnce(30 seconds, self, Fault)
   }
-
-  val errorCodes = ErrorCodes().iterator
 
   startWith(Available, NoData)
 
@@ -46,14 +41,13 @@ class ChargerActor(service: BosChargerService, numberOfConnectors: Int = 1)
       if (cs.contains(c)) dispatch(ConnectorActor.SwipeCard(card), c)
       stay()
     case Event(Fault, _) =>
-      service.fault(errorCodes.next())
-      context.system.scheduler.scheduleOnce(5 seconds, self, StateTimeout)
-      goto(Faulted)
+      service.fault()
+      goto(Faulted) forMax 5.seconds
   }
 
   when(Faulted) {
     case Event(StateTimeout, _) =>
-      service.notification(xb.Available)
+      service.available()
       scheduleFault()
       goto(Available)
     case Event(_: UserAction, _) => stay()
@@ -62,13 +56,13 @@ class ChargerActor(service: BosChargerService, numberOfConnectors: Int = 1)
   initialize
 
   def startConnector(c: Int) {
-    context.actorOf(Props(new ConnectorActor(service.connectorService(c))), c.toString)
+    context.actorOf(Props(new ConnectorActor(service.connector(c))), c.toString)
   }
 
   def connector(c: Int): ActorRef = context.actorFor(c.toString)
 
-  def dispatch(msg: ConnectorActor.Action, c: Connector){
-    connector(c.id) ! msg
+  def dispatch(msg: ConnectorActor.Action, c: Int){
+    connector(c) ! msg
   }
 }
 
@@ -79,14 +73,14 @@ object ChargerActor {
 
   sealed trait Data
   val NoData = PluggedConnectors(Set())
-  case class PluggedConnectors(ids: Set[Connector]) extends Data
+  case class PluggedConnectors(ids: Set[Int]) extends Data
 
   sealed trait Action
   case object Heartbeat extends Action
   case object Fault extends Action
 
   sealed trait UserAction extends Action
-  case class Plug(connector: Connector) extends UserAction
-  case class Unplug(connector: Connector) extends UserAction
-  case class SwipeCard(connector: Connector, card: Card) extends UserAction
+  case class Plug(connector: Int) extends UserAction
+  case class Unplug(connector: Int) extends UserAction
+  case class SwipeCard(connector: Int, card: String) extends UserAction
 }

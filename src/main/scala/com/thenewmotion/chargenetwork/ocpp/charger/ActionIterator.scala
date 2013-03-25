@@ -19,7 +19,7 @@ object ActionIterator {
   sealed trait UserAction
   case object Plug extends UserAction
   case object Unplug extends UserAction
-  case class SwipeCard(card: Card) extends UserAction
+  case class SwipeCard(card: String) extends UserAction
 }
 
 class RandomIterator extends ActionIterator {
@@ -29,6 +29,6 @@ class RandomIterator extends ActionIterator {
   def next(): UserAction = Random.nextInt(4) match {
     case 0 => Plug
     case 1 => Unplug
-    case 2 | 3 => SwipeCard(Card("3E60A5E2"))
+    case _ => SwipeCard("3E60A5E2")
   }
 }

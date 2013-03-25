@@ -5,20 +5,19 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.thenewmotion</groupId>
-        <artifactId>parent_2.10.0-RC2</artifactId>
-        <version>2.0-SNAPSHOT</version>
+        <groupId>ua.t3hnar</groupId>
+        <artifactId>scala-parent-pom</artifactId>
+        <version>1.1</version>
     </parent>
 
     <groupId>com.thenewmotion.chargenetwork</groupId>
-    <artifactId>ocpp-charger_2.10.0-RC2</artifactId>
+    <artifactId>ocpp-charger_2.9.2</artifactId>
     <version>1.0-SNAPSHOT</version>
     <name>OCPP Charger</name>
     <description>Simple ocpp charger simulator</description>
 
-
     <properties>
-        <akka.version>2.1.0-RC2</akka.version>
+        <akka.version>2.0.5</akka.version>
     </properties>
 
     <repositories>
@@ -42,24 +41,24 @@
     <dependencies>
 
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>ocpp_${scala.version}</artifactId>
-            <version>3.0-SNAPSHOT</version>
+            <groupId>com.thenewmotion.ocpp</groupId>
+            <artifactId>ocpp-common_${scala.version}</artifactId>
+            <version>2.8-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.thenewmotion</groupId>
-            <artifactId>time_${scala.version}</artifactId>
-            <version>2.0-SNAPSHOT</version>
+            <artifactId>time</artifactId>
+            <version>1.14</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-actor_${scala.version}</artifactId>
+            <artifactId>akka-actor</artifactId>
             <version>${akka.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-testkit_${scala.version}</artifactId>
+            <artifactId>akka-testkit</artifactId>
             <version>${akka.version}</version>
             <scope>test</scope>
         </dependency>

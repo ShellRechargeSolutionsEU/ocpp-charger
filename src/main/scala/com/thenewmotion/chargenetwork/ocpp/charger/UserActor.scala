@@ -1,20 +1,19 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
 import akka.actor.{Actor, ActorRef}
-import concurrent.duration._
+import akka.util.duration._
 
 /**
  * @author Yaroslav Klymko
  */
-class UserActor(charger: ActorRef, c: Connector, actions: ActionIterator) extends Actor {
+class UserActor(charger: ActorRef, c: Int, actions: ActionIterator) extends Actor {
   import com.thenewmotion.chargenetwork.ocpp.charger.{ActionIterator => AT}
   import ChargerActor._
-  import context.dispatcher
 
   case object Act
 
   override def preStart() {
-    context.system.scheduler.schedule(1 second, 2 seconds, self, Act)
+    context.system.scheduler.schedule(1 second, 1 second, self, Act)
   }
 
   def receive = {

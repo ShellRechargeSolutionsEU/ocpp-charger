@@ -1,12 +1,11 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
 import akka.actor._
-import com.thenewmotion.chargenetwork.{ocpp => xb}
 
 /**
  * @author Yaroslav Klymko
  */
-class ConnectorActor(bos: BosConnectorService)
+class ConnectorActor(service: ConnectorService)
   extends Actor
   with LoggingFSM[ConnectorActor.State, ConnectorActor.Data] {
   import ConnectorActor._
@@ -15,22 +14,22 @@ class ConnectorActor(bos: BosConnectorService)
 
   when(Available) {
     case Event(Plug, _) =>
-      bos.notification(xb.Occupied)
+      service.occupied()
       goto(Connected)
   }
 
   when(Connected) {
     case Event(SwipeCard(rfid), _)  =>
-      if (bos.authorize(rfid)) goto(Charging) using ChargingData(bos.startSession(rfid))
+      if (service.authorize(rfid)) goto(Charging) using ChargingData(service.startSession(rfid))
       else stay()
     case Event(Unplug, _) =>
-      bos.notification(xb.Available)
+      service.available()
       goto(Available)
   }
 
   when(Charging) {
     case Event(SwipeCard(rfid), ChargingData(transactionId)) =>
-      if (bos.authorize(rfid) && bos.stopSession(Some(rfid), transactionId))
+      if (service.authorize(rfid) && service.stopSession(Some(rfid), transactionId))
         goto(Connected) using (NoData)
       else stay()
     case Event(_: Action, _) => stay()
@@ -38,7 +37,7 @@ class ConnectorActor(bos: BosConnectorService)
 
   onTermination {
     case StopEvent(_, Charging, ChargingData(transactionId)) =>
-      bos.stopSession(None, transactionId)
+      service.stopSession(None, transactionId)
   }
 }
 
@@ -51,7 +50,7 @@ object ConnectorActor {
   sealed trait Action
   case object Plug extends Action
   case object Unplug extends Action
-  case class SwipeCard(rfid: Card) extends Action
+  case class SwipeCard(rfid: String) extends Action
   case object Fault
 
   sealed abstract class Data

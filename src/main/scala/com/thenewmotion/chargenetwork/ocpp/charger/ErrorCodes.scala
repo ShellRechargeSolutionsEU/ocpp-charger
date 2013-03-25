@@ -1,6 +1,6 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
-import com.thenewmotion.chargenetwork.ocpp._
+import com.thenewmotion.ocpp._
 
 /**
  * @author Yaroslav Klymko
