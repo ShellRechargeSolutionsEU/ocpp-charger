@@ -28,9 +28,6 @@ class ChargerActor(service: BosService, numberOfConnectors: Int = 1)
   startWith(Available, NoData)
 
   when(Available) {
-    case Event(Heartbeat, _) =>
-      service.heartbeat()
-      stay()
     case Event(Plug(c), PluggedConnectors(cs)) =>
       if (!cs.contains(c)) dispatch(ConnectorActor.Plug, c)
       stay() using PluggedConnectors(cs + c)
@@ -51,6 +48,12 @@ class ChargerActor(service: BosService, numberOfConnectors: Int = 1)
       scheduleFault()
       goto(Available)
     case Event(_: UserAction, _) => stay()
+  }
+
+  whenUnhandled {
+    case Event(Heartbeat, _) =>
+      service.heartbeat()
+      stay()
   }
 
   initialize

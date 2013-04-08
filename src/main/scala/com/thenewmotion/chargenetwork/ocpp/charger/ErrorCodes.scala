@@ -6,6 +6,8 @@ import com.thenewmotion.ocpp._
  * @author Yaroslav Klymko
  */
 object ErrorCodes {
+  import ChargePointErrorCode._
+
   private val codes = List(
     ConnectorLockFailure,
     HighTemperature,
@@ -15,5 +17,5 @@ object ErrorCodes {
     ReaderFailure,
     ResetFailure)
 
-  def apply(): Stream[ChargePointErrorCode] = codes.toStream #::: apply()
+  def apply(): Stream[ChargePointErrorCode.Value] = codes.toStream #::: apply()
 }
