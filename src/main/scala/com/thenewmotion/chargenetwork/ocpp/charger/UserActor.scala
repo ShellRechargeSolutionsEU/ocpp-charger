@@ -1,7 +1,7 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
 import akka.actor.{Actor, ActorRef}
-import akka.util.duration._
+import scala.concurrent.duration._
 
 /**
  * @author Yaroslav Klymko
@@ -9,6 +9,7 @@ import akka.util.duration._
 class UserActor(charger: ActorRef, c: Int, actions: ActionIterator) extends Actor {
   import com.thenewmotion.chargenetwork.ocpp.charger.{ActionIterator => AT}
   import ChargerActor._
+  import context.dispatcher
 
   case object Act
 

@@ -1,7 +1,7 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
 import akka.actor._
-import akka.util.duration._
+import scala.concurrent.duration._
 
 /**
  * @author Yaroslav Klymko
@@ -11,6 +11,7 @@ class ChargerActor(service: BosService, numberOfConnectors: Int = 1)
   with LoggingFSM[ChargerActor.State, ChargerActor.Data] {
 
   import ChargerActor._
+  import context.dispatcher
 
   override def preStart() {
     val interval = service.boot() / 100
