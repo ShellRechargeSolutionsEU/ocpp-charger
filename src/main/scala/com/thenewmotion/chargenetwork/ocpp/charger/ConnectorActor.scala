@@ -1,6 +1,7 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
 import akka.actor._
+import scala.concurrent.duration._
 
 /**
  * @author Yaroslav Klymko
@@ -20,7 +21,10 @@ class ConnectorActor(service: ConnectorService)
 
   when(Connected) {
     case Event(SwipeCard(rfid), _)  =>
-      if (service.authorize(rfid)) goto(Charging) using ChargingData(service.startSession(rfid))
+      if (service.authorize(rfid)) {
+        val sessionId = service.startSession(rfid, initialMeterValue)
+        goto(Charging) using ChargingData(sessionId, initialMeterValue)
+      }
       else stay()
     case Event(Unplug, _) =>
       service.available()
@@ -28,20 +32,32 @@ class ConnectorActor(service: ConnectorService)
   }
 
   when(Charging) {
-    case Event(SwipeCard(rfid), ChargingData(transactionId)) =>
-      if (service.authorize(rfid) && service.stopSession(Some(rfid), transactionId))
+    case Event(SwipeCard(rfid), ChargingData(transactionId, meterValue)) =>
+      if (service.authorize(rfid) && service.stopSession(Some(rfid), transactionId, meterValue))
         goto(Connected) using (NoData)
       else stay()
+    case Event(SendMeterValue, ChargingData(transactionId, meterValue)) => {
+      log.debug("Sending meter value")
+      service.meterValue(transactionId, meterValue)
+      stay() using ChargingData(transactionId, meterValue + 1)
+    }
     case Event(_: Action, _) => stay()
   }
 
+  onTransition {
+    case _ -> Charging => { log.debug("Setting timer for meterValue"); setTimer("meterValueTimer", SendMeterValue, 200 millis, true) }
+    case Charging -> _ => cancelTimer("meterValueTimer")
+  }
+
   onTermination {
-    case StopEvent(_, Charging, ChargingData(transactionId)) =>
-      service.stopSession(None, transactionId)
+    case StopEvent(_, Charging, ChargingData(transactionId, meterValue)) =>
+      service.stopSession(None, transactionId, meterValue)
   }
 }
 
 object ConnectorActor {
+  val initialMeterValue = 100
+
   sealed trait State
   case object Available extends State
   case object Connected extends State
@@ -55,5 +71,7 @@ object ConnectorActor {
 
   sealed abstract class Data
   case object NoData extends Data
-  case class ChargingData(transactionId: Int) extends Data
+  case class ChargingData(transactionId: Int, meterValue: Int) extends Data
+
+  case object SendMeterValue
 }

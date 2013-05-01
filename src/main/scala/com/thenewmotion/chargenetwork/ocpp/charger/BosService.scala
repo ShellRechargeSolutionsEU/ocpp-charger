@@ -18,8 +18,9 @@ trait ConnectorService {
   def occupied()
   def available()
   def authorize(card: String): Boolean
-  def startSession(card: String): Int
-  def stopSession(card: Option[String], transactionId: Int): Boolean
+  def startSession(card: String, meterValue: Int): Int
+  def meterValue(transactionId: Int, meterValue: Int)
+  def stopSession(card: Option[String], transactionId: Int, meterValue: Int): Boolean
 }
 
 trait Common {
@@ -80,11 +81,16 @@ class ConnectorServiceImpl(protected val service: CentralSystemService, connecto
 
   def authorize(card: String) = service.authorize(card).status == AuthorizationStatus.Accepted
 
-  def startSession(card: String) =
-    service.startTransaction(ConnectorScope(connectorId), card, DateTime.now, 100, None)._1
+  def startSession(card: String, meterValue: Int) =
+    service.startTransaction(ConnectorScope(connectorId), card, DateTime.now, meterValue, None)._1
 
-  def stopSession(card: Option[String], transactionId: Int): Boolean =
-    service.stopTransaction(transactionId, card, DateTime.now, 200, Nil) match {
+  def meterValue(transactionId: Int, meterValue: Int) {
+    val meter = Meter(DateTime.now, List(Meter.DefaultValue(meterValue)))
+    service.meterValues(ConnectorScope(connectorId), Some(transactionId), List(meter))
+  }
+
+  def stopSession(card: Option[String], transactionId: Int, meterValue: Int): Boolean =
+    service.stopTransaction(transactionId, card, DateTime.now, meterValue, Nil) match {
       case Some(IdTagInfo(AuthorizationStatus.Accepted, _, _)) => true
       case _ => false
     }
