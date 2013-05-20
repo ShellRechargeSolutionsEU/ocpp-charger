@@ -38,6 +38,12 @@
         </snapshotRepository>
     </distributionManagement>
 
+    <scm>
+        <url>https://github.com/thenewmotion/ocpp-charger</url>
+        <connection>scm:git:ssh://git@github.com/thenewmotion/ocpp-charger</connection>
+        <developerConnection>scm:git:ssh://git@github.com/thenewmotion/ocpp-charger</developerConnection>
+    </scm>
+
     <dependencies>
 
         <dependency>
