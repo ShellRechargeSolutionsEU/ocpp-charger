@@ -50,7 +50,7 @@ class BosServiceImpl(chargerId: String, protected val service: CentralSystemServ
     firmwareVersion = Some("0.1"),
     iccid = None,
     imsi = None, meterType = None,
-    meterSerialNumber = None).heartbeatInterval
+    meterSerialNumber = None).heartbeatInterval.toSeconds.toInt
 
   private val errorCodes = ErrorCodes().iterator
 
