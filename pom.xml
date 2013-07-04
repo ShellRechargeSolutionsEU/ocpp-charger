@@ -17,6 +17,7 @@
     <properties>
         <akka.version>2.1.4</akka.version>
         <spray.version>1.1-M7</spray.version>
+        <ocpp.version>2.13-SNAPSHOT</ocpp.version>
     </properties>
 
     <repositories>
@@ -52,7 +53,12 @@
         <dependency>
             <groupId>com.thenewmotion.ocpp</groupId>
             <artifactId>ocpp-common_${scala.version}</artifactId>
-            <version>2.13-SNAPSHOT</version>
+            <version>${ocpp.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.thenewmotion.ocpp</groupId>
+            <artifactId>ocpp-spray_${scala.version}</artifactId>
+            <version>${ocpp.version}</version>
         </dependency>
         <dependency>
             <groupId>com.thenewmotion</groupId>
@@ -96,11 +102,6 @@
             <groupId>org.rogach</groupId>
             <artifactId>scallop_${scala.version}</artifactId>
             <version>0.9.2</version>
-        </dependency>
-        <dependency>
-            <groupId>io.spray</groupId>
-            <artifactId>spray-routing</artifactId>
-            <version>${spray.version}</version>
         </dependency>
         <dependency>
             <groupId>io.spray</groupId>
