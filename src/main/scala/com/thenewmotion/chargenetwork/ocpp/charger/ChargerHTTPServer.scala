@@ -1,33 +1,42 @@
 package com.thenewmotion.chargenetwork
 package ocpp.charger
 
-import spray.can.server.SprayCanHttpServerApp
-import java.net.URI
 import akka.actor.{Actor, Props, ActorRef}
-import spray.http.HttpRequest
+import akka.io.IO
+import akka.io.Tcp.Connected
 import com.thenewmotion.ocpp._
-import com.typesafe.scalalogging.slf4j.Logging
 import com.thenewmotion.ocpp.spray.{OcppProcessing, ChargerInfo}
+import com.typesafe.scalalogging.slf4j.Logging
+import java.net.URI
+import _root_.spray.can.Http.Register
+import _root_.spray.can.Http
+import _root_.spray.http.{HttpResponse, HttpRequest}
 
 
-class ChargerHTTPServer(val listenPort: Int) extends Logging with SprayCanHttpServerApp {
-  override lazy val system = com.thenewmotion.chargenetwork.ocpp.charger.system
-
+class ChargerHTTPServer(val listenPort: Int) extends Logging {
   private val interface = "localhost"
 
   private class ChargerServerActor extends Actor {
     def receive = {
+      case Connected(_, _) =>
+        sender ! Register(self)
+
       case req: HttpRequest =>
+        logger.debug(s"Received HTTP request: ${req}")
+        sender ! handleRequest(req)
+    }
+
+    private def handleRequest(req: HttpRequest): HttpResponse = {
         val result = OcppProcessing[ChargePointService](req, (_: ChargerInfo) =>  Some(LoggingChargePointService))
         result match {
-          case Left(error) => sender ! error
-          case Right((chargerId, msg)) => sender ! msg.apply
+          case Left(error) => error
+          case Right((chargerId, msg)) => msg.apply
         }
     }
   }
 
-  private val requestHandler = system.actorOf(Props(new ChargerServerActor))
-  newHttpServer(requestHandler) ! Bind(interface = interface, port = listenPort)
+  private val requestHandler: ActorRef = system.actorOf(Props(new ChargerServerActor))
+  IO(Http) ! Http.Bind(requestHandler, interface = interface, port = listenPort)
 
   def listenURI: URI = new URI("http", null, interface, listenPort, null, null, null)
 
