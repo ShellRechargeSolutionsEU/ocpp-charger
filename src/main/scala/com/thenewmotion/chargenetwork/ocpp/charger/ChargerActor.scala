@@ -14,9 +14,9 @@ class ChargerActor(service: BosService, numberOfConnectors: Int = 1)
   import context.dispatcher
 
   override def preStart() {
-    val interval = service.boot() / 100
+    val interval = service.boot()
     service.available()
-    context.system.scheduler.schedule(1 second, interval seconds, self, Heartbeat)
+    context.system.scheduler.schedule(1 second, interval, self, Heartbeat)
     scheduleFault()
 
     (0 until numberOfConnectors).map(startConnector)

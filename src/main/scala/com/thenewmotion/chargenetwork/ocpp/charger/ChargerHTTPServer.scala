@@ -16,6 +16,9 @@ import _root_.spray.http.{HttpResponse, HttpRequest}
 class ChargerHTTPServer(serviceFunction: ChargerInfo => Option[ChargePointService], listenPort: Int) extends Logging {
   private val interface = "localhost"
 
+  private val requestHandler: ActorRef = system.actorOf(Props(new ChargerServerActor))
+  IO(Http) ! Http.Bind(requestHandler, interface = interface, port = listenPort)
+
   private class ChargerServerActor extends Actor {
     def receive = {
       case Connected(_, _) =>
@@ -26,19 +29,14 @@ class ChargerHTTPServer(serviceFunction: ChargerInfo => Option[ChargePointServic
         sender ! handleRequest(req)
     }
 
-    private def handleRequest(req: HttpRequest): HttpResponse = {
-        val result = OcppProcessing[ChargePointService](req, serviceFunction)
-        result match {
-          case Left(error) => error
-          case Right((chargerId, msg)) => msg.apply
-        }
+    def handleRequest(req: HttpRequest): HttpResponse = {
+      val result = OcppProcessing[ChargePointService](req, serviceFunction)
+      result match {
+        case Left(error) => error
+        case Right((chargerId, msg)) => msg()
+      }
     }
   }
 
-  private val requestHandler: ActorRef = system.actorOf(Props(new ChargerServerActor))
-  IO(Http) ! Http.Bind(requestHandler, interface = interface, port = listenPort)
-
   def listenURI: URI = new URI("http", null, interface, listenPort, null, null, null)
-
-  def addChargerActor(chargerActorRef: ActorRef) { }
 }

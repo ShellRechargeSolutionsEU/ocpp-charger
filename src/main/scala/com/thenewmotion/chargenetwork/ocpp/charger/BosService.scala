@@ -2,6 +2,7 @@ package com.thenewmotion.chargenetwork.ocpp.charger
 
 import com.thenewmotion.ocpp._
 import com.thenewmotion.time.Imports._
+import scala.concurrent.duration.FiniteDuration
 
 /**
  * @author Yaroslav Klymko
@@ -9,7 +10,7 @@ import com.thenewmotion.time.Imports._
 trait BosService {
   def fault()
   def available()
-  def boot(): Int
+  def boot(): FiniteDuration
   def heartbeat()
   def connector(idx: Int): ConnectorService
 }
@@ -42,7 +43,7 @@ object BosService {
 
 class BosServiceImpl(chargerId: String, protected val service: CentralSystemService) extends BosService with Common {
 
-  def boot(): Int = service.bootNotification(
+  def boot(): FiniteDuration = service.bootNotification(
     chargePointVendor = "The New Motion",
     chargePointModel = "simulator",
     chargePointSerialNumber = Some(chargerId),
@@ -50,7 +51,7 @@ class BosServiceImpl(chargerId: String, protected val service: CentralSystemServ
     firmwareVersion = Some("0.1"),
     iccid = None,
     imsi = None, meterType = None,
-    meterSerialNumber = None).heartbeatInterval.toSeconds.toInt
+    meterSerialNumber = None).heartbeatInterval
 
   private val errorCodes = ErrorCodes().iterator
 
