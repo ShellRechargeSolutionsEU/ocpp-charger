@@ -2,7 +2,7 @@ package com.thenewmotion.chargenetwork.ocpp.charger
 
 import com.thenewmotion.ocpp._
 import org.joda.time.DateTime
-import com.thenewmotion.ocpp.GetDiagnosticsRetries
+import com.thenewmotion.ocpp.Retries
 import com.typesafe.scalalogging.slf4j.Logging
 
 /**
@@ -21,7 +21,7 @@ object LoggingChargePointService extends ChargePointService with Logging {
   }
 
   def getDiagnostics(location: _root_.com.thenewmotion.ocpp.Uri, startTime: Option[DateTime],
-                     stopTime: Option[DateTime], retries: Option[GetDiagnosticsRetries]): Option[String] = {
+                     stopTime: Option[DateTime], retries: Retries): Option[String] = {
     logCommand("GetDiagnostics", Map("location" -> location,
       "startTime" -> startTime,
       "stopTime" -> stopTime,
@@ -65,11 +65,10 @@ object LoggingChargePointService extends ChargePointService with Logging {
     false
   }
 
-  def updateFirmware(retrieveDate: DateTime, location: Uri, retries: Option[Int], retryInterval: Option[Int]) {
+  def updateFirmware(retrieveDate: DateTime, location: Uri, retries: Retries) {
     logCommand("UpdateFirmware", Map("retrieveDate" -> retrieveDate,
       "location" -> location,
-      "retries" -> retries,
-      "retryInterval" -> retryInterval))
+      "retries" -> retries))
   }
 
   @scala.throws[ActionNotSupportedException]
