@@ -13,7 +13,7 @@ import _root_.spray.can.Http
 import _root_.spray.http.{HttpResponse, HttpRequest}
 
 
-class ChargerHTTPServer(val listenPort: Int) extends Logging {
+class ChargerHTTPServer(serviceFunction: ChargerInfo => Option[ChargePointService], listenPort: Int) extends Logging {
   private val interface = "localhost"
 
   private class ChargerServerActor extends Actor {
@@ -27,7 +27,7 @@ class ChargerHTTPServer(val listenPort: Int) extends Logging {
     }
 
     private def handleRequest(req: HttpRequest): HttpResponse = {
-        val result = OcppProcessing[ChargePointService](req, (_: ChargerInfo) =>  Some(LoggingChargePointService))
+        val result = OcppProcessing[ChargePointService](req, serviceFunction)
         result match {
           case Left(error) => error
           case Right((chargerId, msg)) => msg.apply
