@@ -4,11 +4,17 @@ import com.typesafe.scalalogging.slf4j.Logging
 import com.thenewmotion.ocpp.chargepoint._
 import com.thenewmotion.ocpp.chargepoint.DataTransferReq
 import com.thenewmotion.ocpp.DataTransferStatus
+import akka.actor.ActorRef
+import akka.util.Timeout
+import akka.pattern.ask
+import scala.concurrent.duration._
+import scala.concurrent.Await
+import java.util.concurrent.TimeoutException
 
 /**
  * Implementation of ChargePointService that just logs each method call on it and does nothing else
  */
-object LoggingChargePointService extends ChargePoint with Logging {
+class ChargePointService(chargerId: String, actor: ActorRef) extends ChargePoint with Logging {
 
   def clearCache = ClearCacheRes(accepted = false)
 
@@ -41,9 +47,12 @@ object LoggingChargePointService extends ChargePoint with Logging {
   def cancelReservation(req: CancelReservationReq) = CancelReservationRes(accepted = false)
 
   override def apply[REQ <: Req, RES <: Res](req: REQ)(implicit reqRes: ReqRes[REQ, RES]) = {
-
-    val res = super.apply(req)(reqRes)
-    logger.info(s"\n\t>> $req\n\t<< $res")
+    implicit val timeout = Timeout(500 millis)
+    val future = actor ? req
+    val res = try Await.result(future, timeout.duration).asInstanceOf[RES] catch {
+      case _: TimeoutException => super.apply(req)(reqRes)
+    }
+    logger.info(s"$chargerId\n\t>> $req\n\t<< $res")
     res
   }
 }

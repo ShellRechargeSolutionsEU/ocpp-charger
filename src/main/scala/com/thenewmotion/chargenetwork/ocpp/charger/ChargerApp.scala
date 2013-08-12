@@ -25,11 +25,11 @@ object ChargerApp {
       case e: NoSuchElementException => sys.error("Unknown protocol version " + config.protocolVersion())
     }
     val url = new URI(config.chargeServerUrl() + "/ocpp/")
+    val server = new ChargerServer(config.listenPort())
+    val charger = new OcppCharger(config.chargerId(), config.numberOfConnectors(), version, url, server)
 
-    val charger = new OcppCharger(config.chargerId(), config.numberOfConnectors(), version, url, config.listenPort())
-
-    (0 until config.numberOfConnectors()) map {
-      c => system.actorOf(Props(new UserActor(charger.chargerActor, c, ActionIterator())))
-    }
+//    (0 until config.numberOfConnectors()) map {
+//      c => system.actorOf(Props(new UserActor(charger.chargerActor, c, ActionIterator())))
+//    }
   }
 }

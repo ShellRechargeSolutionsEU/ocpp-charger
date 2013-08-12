@@ -7,6 +7,7 @@
 
     <logger name="com.ning.http.client.providers.netty" level="WARN"/>
     <logger name="com.thenewmotion.ocpp.http" level="WARN"/>
+    <logger name="com.thenewmotion.ocpp.spray" level="WARN"/>
 
     <root level="DEBUG">
         <appender-ref ref="console"/>

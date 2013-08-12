@@ -2,6 +2,7 @@ package com.thenewmotion.chargenetwork.ocpp.charger
 
 import akka.actor._
 import scala.concurrent.duration._
+import com.thenewmotion.ocpp.chargepoint._
 
 /**
  * @author Yaroslav Klymko
@@ -12,6 +13,8 @@ class ChargerActor(service: BosService, numberOfConnectors: Int = 1)
 
   import ChargerActor._
   import context.dispatcher
+
+  var localAuthList = LocalAuthList()
 
   override def preStart() {
     val interval = service.boot()
@@ -52,6 +55,33 @@ class ChargerActor(service: BosService, numberOfConnectors: Int = 1)
   }
 
   whenUnhandled {
+    case Event(GetLocalListVersionReq, _) =>
+      sender ! GetLocalListVersionRes(localAuthList.version)
+      stay()
+
+    case Event(SendLocalListReq(updateType: UpdateType.Value, version, localAuthorisationList, _), _) =>
+
+      import UpdateStatus._
+      val status = if (version.version <= localAuthList.version.version) VersionMismatch
+      else {
+        localAuthList = LocalAuthList(
+          version = version,
+          data = updateType match {
+            case UpdateType.Full => localAuthorisationList.collect {
+              case AuthorisationAdd(idTag, idTagInfo) => idTag -> idTagInfo
+            }.toMap
+
+            case UpdateType.Differential => localAuthorisationList.foldLeft(localAuthList.data) {
+              case (data, AuthorisationAdd(idTag, idTagInfo)) => data + (idTag -> idTagInfo)
+              case (data, AuthorisationRemove(idTag)) => data - idTag
+            }
+          })
+        UpdateAccepted(None)
+      }
+
+      sender ! SendLocalListRes(status)
+      stay()
+
     case Event(Heartbeat, _) =>
       service.heartbeat()
       stay()
@@ -65,7 +95,7 @@ class ChargerActor(service: BosService, numberOfConnectors: Int = 1)
 
   def connector(c: Int): ActorRef = context.actorFor(c.toString)
 
-  def dispatch(msg: ConnectorActor.Action, c: Int){
+  def dispatch(msg: ConnectorActor.Action, c: Int) {
     connector(c) ! msg
   }
 }
@@ -88,3 +118,6 @@ object ChargerActor {
   case class Unplug(connector: Int) extends UserAction
   case class SwipeCard(connector: Int, card: String) extends UserAction
 }
+
+case class LocalAuthList(version: AuthListSupported = AuthListSupported(0),
+                         data: Map[String, IdTagInfo] = Map())
