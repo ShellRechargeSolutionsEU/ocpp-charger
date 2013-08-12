@@ -4,7 +4,7 @@ package ocpp.charger
 import akka.actor.{Actor, Props, ActorRef}
 import akka.io.IO
 import akka.io.Tcp.Connected
-import com.thenewmotion.ocpp._
+import com.thenewmotion.ocpp.chargepoint.ChargePoint
 import com.thenewmotion.ocpp.spray.{OcppProcessing, ChargerInfo}
 import com.typesafe.scalalogging.slf4j.Logging
 import java.net.URI
@@ -13,7 +13,8 @@ import _root_.spray.can.Http
 import _root_.spray.http.{HttpResponse, HttpRequest}
 
 
-class ChargerHTTPServer(serviceFunction: ChargerInfo => Option[ChargePointService], listenPort: Int) extends Logging {
+
+class ChargerHTTPServer(serviceFunction: ChargerInfo => Option[ChargePoint], listenPort: Int) extends Logging {
   private val interface = "localhost"
 
   private val requestHandler: ActorRef = system.actorOf(Props(new ChargerServerActor))
@@ -30,7 +31,7 @@ class ChargerHTTPServer(serviceFunction: ChargerInfo => Option[ChargePointServic
     }
 
     def handleRequest(req: HttpRequest): HttpResponse = {
-      val result = OcppProcessing[ChargePointService](req, serviceFunction)
+      val result = OcppProcessing[ChargePoint](req, serviceFunction)
       result match {
         case Left(error) => error
         case Right((chargerId, msg)) => msg()

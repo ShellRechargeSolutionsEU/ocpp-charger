@@ -17,7 +17,7 @@
     <properties>
         <akka.version>2.1.4</akka.version>
         <spray.version>1.1-M8</spray.version>
-        <ocpp.version>2.13-SNAPSHOT</ocpp.version>
+        <ocpp.version>3.1-SNAPSHOT</ocpp.version>
     </properties>
 
     <repositories>

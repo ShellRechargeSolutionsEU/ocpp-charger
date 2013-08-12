@@ -5,6 +5,9 @@
         </encoder>
     </appender>
 
+    <logger name="com.ning.http.client.providers.netty" level="WARN"/>
+    <logger name="com.thenewmotion.ocpp.http" level="WARN"/>
+
     <root level="DEBUG">
         <appender-ref ref="console"/>
     </root>

@@ -1,10 +1,11 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
-import com.thenewmotion.ocpp.{ChargePointService, CentralSystemClient, Version}
 import java.net.URI
 import dispatch.Http
 import akka.actor.Props
+import com.thenewmotion.ocpp.{CentralSystemClient, Version}
 import com.thenewmotion.ocpp.spray.ChargerInfo
+import com.thenewmotion.ocpp.chargepoint.ChargePoint
 
 
 class OcppCharger(chargerId: String,
@@ -17,7 +18,7 @@ class OcppCharger(chargerId: String,
   val client = CentralSystemClient(chargerId, ocppVersion, centralSystemURL, new Http, Some(httpServer.listenURI))
   val chargerActor = system.actorOf(Props(new ChargerActor(BosService(chargerId, client), numConnectors)))
 
-  private[charger] def serviceForCharger(chargerInfo: ChargerInfo): Option[ChargePointService] =
+  private[charger] def serviceForCharger(chargerInfo: ChargerInfo): Option[ChargePoint] =
     if (chargerInfo.chargerId == chargerId) Some(LoggingChargePointService)
     else None
 }

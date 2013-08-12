@@ -1,115 +1,50 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
-import com.thenewmotion.ocpp._
-import org.joda.time.DateTime
-import com.thenewmotion.ocpp.Retries
 import com.typesafe.scalalogging.slf4j.Logging
+import com.thenewmotion.ocpp.chargepoint._
+import com.thenewmotion.ocpp.chargepoint.DataTransferReq
+import com.thenewmotion.ocpp.DataTransferStatus
 
 /**
  * Implementation of ChargePointService that just logs each method call on it and does nothing else
  */
-object LoggingChargePointService extends ChargePointService with Logging {
-  private def logCommand(commandName: String, parameters: Map[String, Any] = Map.empty) = {
-    def formatParameter(param: (String, Any)) = param._1 + "=" + param._2
-    val parameterString = parameters.map(formatParameter).mkString(", ")
-    logger.info(s"Command received from central system: ${commandName} with parameters ${parameterString}")
-  }
+object LoggingChargePointService extends ChargePoint with Logging {
 
-  def reset(resetType: ResetType.Value): Boolean = {
-    logCommand("Reset", Map("resetType" -> resetType))
-    false
-  }
+  def clearCache = ClearCacheRes(accepted = false)
 
-  def getDiagnostics(location: _root_.com.thenewmotion.ocpp.Uri, startTime: Option[DateTime],
-                     stopTime: Option[DateTime], retries: Retries): Option[String] = {
-    logCommand("GetDiagnostics", Map("location" -> location,
-      "startTime" -> startTime,
-      "stopTime" -> stopTime,
-      "retries" -> retries))
-    None
-  }
+  def remoteStartTransaction(req: RemoteStartTransactionReq) = RemoteStartTransactionRes(accepted = false)
 
-  def unlockConnector(connector: ConnectorScope): Boolean = {
-    logCommand("UnlockConnector", Map("connector" -> connector))
-    false
-  }
+  def remoteStopTransaction(req: RemoteStopTransactionReq) = RemoteStopTransactionRes(accepted = false)
 
-  def remoteStopTransaction(transactionId: Int): Boolean = {
-    logCommand("RemoteStopTransaction", Map("transactionId" -> transactionId))
-    false
-  }
+  def unlockConnector(req: UnlockConnectorReq) = UnlockConnectorRes(accepted = false)
 
-  def remoteStartTransaction(idTag: IdTag, connector: Option[ConnectorScope]): Boolean = {
-    logCommand("RemoteStartTransaction", Map("idTag" -> idTag, "connector" -> connector))
-    false
-  }
+  def getDiagnostics(req: GetDiagnosticsReq) = GetDiagnosticsRes(None)
 
-  def changeConfiguration(key: String, value: String): ConfigurationStatus.Value = {
-    logCommand("ChangeConfiguration", Map("key" -> key, "value" -> value))
-    ConfigurationStatus.NotSupported
-  }
+  def changeConfiguration(req: ChangeConfigurationReq) = ChangeConfigurationRes(ConfigurationStatus.NotSupported)
 
-  @scala.throws[ActionNotSupportedException]
-  def getConfiguration(keys: List[String]): Configuration = {
-    logCommand("GetConfiguration", Map("keys" -> keys))
-    Configuration(Nil, keys)
-  }
+  def getConfiguration(req: GetConfigurationReq) = GetConfigurationRes(Nil, req.keys)
 
-  def changeAvailability(scope: Scope, availabilityType: AvailabilityType.Value): AvailabilityStatus.Value = {
-    logCommand("ChangeAvailability", Map("scope" -> scope, "availabilityType" -> availabilityType))
-    AvailabilityStatus.Rejected
-  }
+  def changeAvailability(req: ChangeAvailabilityReq) = ChangeAvailabilityRes(AvailabilityStatus.Rejected)
 
-  def clearCache: Boolean = {
-    logCommand("ClearCache")
-    false
-  }
+  def reset(req: ResetReq) = ResetRes(accepted = false)
 
-  def updateFirmware(retrieveDate: DateTime, location: Uri, retries: Retries) {
-    logCommand("UpdateFirmware", Map("retrieveDate" -> retrieveDate,
-      "location" -> location,
-      "retries" -> retries))
-  }
+  def updateFirmware(req: UpdateFirmwareReq) {}
 
-  @scala.throws[ActionNotSupportedException]
-  def sendLocalList(updateType: UpdateType.Value, listVersion: AuthListSupported,
-                    localAuthorisationList: List[AuthorisationData], hash: Option[String]): UpdateStatus.Value = {
-    logCommand("SendLocalList", Map("updateType" -> updateType,
-      "listVersion" -> listVersion,
-      "localAuthorisationList" -> localAuthorisationList,
-      "hash" -> hash))
-    UpdateStatus.NotSupportedValue
-  }
+  def sendLocalList(req: SendLocalListReq) = SendLocalListRes(UpdateStatus.NotSupportedValue)
 
-  @scala.throws[ActionNotSupportedException]
-  def getLocalListVersion: AuthListVersion = {
-    logCommand("GetLocalListVersion")
-    AuthListNotSupported
-  }
+  def getLocalListVersion = GetLocalListVersionRes(AuthListNotSupported)
 
-  @scala.throws[ActionNotSupportedException]
-  def dataTransfer(vendorId: String, messageId: Option[String], data: Option[String]): DataTransferResponse = {
-    logCommand("DataTransfer", Map("vendorId" -> vendorId,
-      "messageId" -> messageId,
-      "data" -> data))
-    DataTransferResponse(DataTransferStatus.UnknownVendorId)
-  }
+  def dataTransfer(req: DataTransferReq) = DataTransferRes(DataTransferStatus.UnknownVendorId)
 
-  @scala.throws[ActionNotSupportedException]
-  def reserveNow(connector: Scope, expiryDate: DateTime, idTag: _root_.com.thenewmotion.ocpp.IdTag,
-                 parentIdTag: Option[String], reservationId: Int): Reservation.Value = {
-    logCommand("ReserveNow", Map("connector" -> connector,
-      "expiryDate" -> expiryDate,
-      "idTag" -> idTag,
-      "parentIdTag" -> parentIdTag,
-      "reservationId" -> reservationId))
-    Reservation.Rejected
-  }
+  def reserveNow(req: ReserveNowReq) = ReserveNowRes(Reservation.Rejected)
 
-  @scala.throws[ActionNotSupportedException]
-  def cancelReservation(reservationId: Int): Boolean = {
-    logCommand("CancelReservation", Map("reservationId" -> reservationId))
-    false
+  def cancelReservation(req: CancelReservationReq) = CancelReservationRes(accepted = false)
+
+  override def apply[REQ <: Req, RES <: Res](req: REQ)(implicit reqRes: ReqRes[REQ, RES]) = {
+
+    val res = super.apply(req)(reqRes)
+    logger.info(s"\n\t>> $req\n\t<< $res")
+    res
   }
 }
 

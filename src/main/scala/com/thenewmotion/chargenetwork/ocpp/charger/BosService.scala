@@ -1,6 +1,7 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
-import com.thenewmotion.ocpp._
+//import com.thenewmotion.ocpp._
+import com.thenewmotion.ocpp.centralsystem._
 import com.thenewmotion.time.Imports._
 import scala.concurrent.duration.FiniteDuration
 
@@ -25,25 +26,25 @@ trait ConnectorService {
 }
 
 trait Common {
-  protected def service: CentralSystemService
+  protected def service: CentralSystem
 
   protected def notification(status: ChargePointStatus, connector: Option[Int] = None) {
-    service.statusNotification(
+    service(StatusNotificationReq(
       connector.map(ConnectorScope.apply) getOrElse ChargePointScope,
       status,
       Some(DateTime.now),
-      None)
+      None))
   }
 }
 
 object BosService {
-  def apply(chargerId: String, service: CentralSystemService): BosService =
+  def apply(chargerId: String, service: CentralSystem): BosService =
     new BosServiceImpl(chargerId, service)
 }
 
-class BosServiceImpl(chargerId: String, protected val service: CentralSystemService) extends BosService with Common {
+class BosServiceImpl(chargerId: String, protected val service: CentralSystem) extends BosService with Common {
 
-  def boot(): FiniteDuration = service.bootNotification(
+  def boot(): FiniteDuration = service(BootNotificationReq(
     chargePointVendor = "The New Motion",
     chargePointModel = "simulator",
     chargePointSerialNumber = Some(chargerId),
@@ -51,7 +52,7 @@ class BosServiceImpl(chargerId: String, protected val service: CentralSystemServ
     firmwareVersion = Some("0.1"),
     iccid = None,
     imsi = None, meterType = None,
-    meterSerialNumber = None).heartbeatInterval
+    meterSerialNumber = None)).heartbeatInterval
 
   private val errorCodes = ErrorCodes().iterator
 
@@ -70,7 +71,7 @@ class BosServiceImpl(chargerId: String, protected val service: CentralSystemServ
   def connector(idx: Int) = new ConnectorServiceImpl(service, idx)
 }
 
-class ConnectorServiceImpl(protected val service: CentralSystemService, connectorId: Int) extends ConnectorService with Common {
+class ConnectorServiceImpl(protected val service: CentralSystem, connectorId: Int) extends ConnectorService with Common {
 
   def occupied() {
     notification(Occupied, Some(connectorId))
@@ -80,19 +81,17 @@ class ConnectorServiceImpl(protected val service: CentralSystemService, connecto
     notification(Available, Some(connectorId))
   }
 
-  def authorize(card: String) = service.authorize(card).status == AuthorizationStatus.Accepted
+  def authorize(card: String) = service(AuthorizeReq(card)).idTag.status == AuthorizationStatus.Accepted
 
   def startSession(card: String, meterValue: Int) =
-    service.startTransaction(ConnectorScope(connectorId), card, DateTime.now, meterValue, None)._1
+    service(StartTransactionReq(ConnectorScope(connectorId), card, DateTime.now, meterValue, None)).transactionId
 
   def meterValue(transactionId: Int, meterValue: Int) {
     val meter = Meter(DateTime.now, List(Meter.DefaultValue(meterValue)))
-    service.meterValues(ConnectorScope(connectorId), Some(transactionId), List(meter))
+    service(MeterValuesReq(ConnectorScope(connectorId), Some(transactionId), List(meter)))
   }
 
   def stopSession(card: Option[String], transactionId: Int, meterValue: Int): Boolean =
-    service.stopTransaction(transactionId, card, DateTime.now, meterValue, Nil) match {
-      case Some(IdTagInfo(AuthorizationStatus.Accepted, _, _)) => true
-      case _ => false
-    }
+    service(StopTransactionReq(transactionId, card, DateTime.now, meterValue, Nil))
+      .idTag.exists(_.status == AuthorizationStatus.Accepted)
 }
