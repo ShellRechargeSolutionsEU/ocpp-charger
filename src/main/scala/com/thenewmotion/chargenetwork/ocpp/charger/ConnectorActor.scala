@@ -34,7 +34,7 @@ class ConnectorActor(service: ConnectorService)
   when(Charging) {
     case Event(SwipeCard(rfid), ChargingData(transactionId, meterValue)) =>
       if (service.authorize(rfid) && service.stopSession(Some(rfid), transactionId, meterValue))
-        goto(Connected) using (NoData)
+        goto(Connected) using NoData
       else stay()
     case Event(SendMeterValue, ChargingData(transactionId, meterValue)) => {
       log.debug("Sending meter value")
@@ -45,7 +45,7 @@ class ConnectorActor(service: ConnectorService)
   }
 
   onTransition {
-    case _ -> Charging => { log.debug("Setting timer for meterValue"); setTimer("meterValueTimer", SendMeterValue, 2000 millis, true) }
+    case _ -> Charging => { log.debug("Setting timer for meterValue"); setTimer("meterValueTimer", SendMeterValue, 100 millis, true) }
     case Charging -> _ => cancelTimer("meterValueTimer")
   }
 
