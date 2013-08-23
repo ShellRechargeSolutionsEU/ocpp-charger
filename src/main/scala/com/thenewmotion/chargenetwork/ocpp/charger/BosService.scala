@@ -9,6 +9,7 @@ import scala.concurrent.duration.FiniteDuration
  * @author Yaroslav Klymko
  */
 trait BosService {
+  def chargerId: String
   def fault()
   def available()
   def boot(): FiniteDuration
@@ -42,7 +43,7 @@ object BosService {
     new BosServiceImpl(chargerId, service)
 }
 
-class BosServiceImpl(chargerId: String, protected val service: CentralSystem) extends BosService with Common {
+class BosServiceImpl(val chargerId: String, protected val service: CentralSystem) extends BosService with Common {
 
   def boot(): FiniteDuration = service(BootNotificationReq(
     chargePointVendor = "The New Motion",

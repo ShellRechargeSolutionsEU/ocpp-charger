@@ -3,6 +3,7 @@ package com.thenewmotion.chargenetwork.ocpp.charger
 import akka.actor._
 import scala.concurrent.duration._
 import com.thenewmotion.ocpp.chargepoint._
+import scala.concurrent.Future
 
 /**
  * @author Yaroslav Klymko
@@ -15,10 +16,16 @@ class ChargerActor(service: BosService, numberOfConnectors: Int = 1)
   import context.dispatcher
 
   var localAuthList = LocalAuthList()
+  var configuration = Map[String, (Boolean, Option[String])](
+    ("chargerId", (true, Some(service.chargerId))),
+    ("numberOfConnectors", (true, Some(numberOfConnectors.toString))),
+    ("OCPP-Simulator", (true, None)))
 
   override def preStart() {
     val interval = service.boot()
-    service.available()
+    Future {
+      service.available()
+    }
     context.system.scheduler.schedule(1 second, interval, self, Heartbeat)
     scheduleFault()
 
@@ -80,6 +87,39 @@ class ChargerActor(service: BosService, numberOfConnectors: Int = 1)
       }
 
       sender ! SendLocalListRes(status)
+      stay()
+
+    case Event(GetConfigurationReq(keys), _) =>
+      val (values: List[KeyValue], unknownKeys: List[String]) =
+        if (keys.isEmpty) configuration.map {
+          case (key, (readonly, value)) => KeyValue(key, readonly, value)
+        }.toList -> Nil
+        else {
+          val data = keys.map {
+            key => key -> configuration.get(key).map {
+              case (readonly, value) => KeyValue(key, readonly, value)
+            }
+          }
+          val values = data.collect {
+            case (_, Some(keyValue)) => keyValue
+          }
+          val unknownKeys = data.collect {
+            case (key, None) => key
+          }
+          (values, unknownKeys)
+        }
+
+      sender ! GetConfigurationRes(values, unknownKeys)
+      stay()
+
+    case Event(ChangeConfigurationReq(key, value), _) =>
+      val status = configuration.get(key) match {
+        case Some((true, _)) => ConfigurationStatus.Rejected
+        case _ =>
+          configuration = configuration + (key -> (false -> Some(value)))
+          ConfigurationStatus.Accepted
+      }
+      sender ! ChangeConfigurationRes(status)
       stay()
 
     case Event(Heartbeat, _) =>

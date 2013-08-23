@@ -2,21 +2,27 @@ package com.thenewmotion.chargenetwork
 package ocpp.charger
 
 import akka.actor.{Actor, Props, ActorRef}
+import akka.io.IO
+import akka.pattern.ask
+import akka.util.Timeout
 import com.thenewmotion.ocpp.chargepoint.ChargePoint
 import com.thenewmotion.ocpp.spray.OcppProcessing
 import com.typesafe.scalalogging.slf4j.Logging
-import akka.io.IO
 import _root_.spray.can.Http
 import _root_.spray.http.{HttpResponse, HttpRequest}
 import java.net.URI
+import scala.concurrent.duration._
+import scala.concurrent.Await
 
 class ChargerServer(port: Int) {
 
   import ChargerServer._
 
   val actor: ActorRef = {
+    implicit val timeout = Timeout(1 second)
     val actor = system.actorOf(Props(new ChargerServerActor))
-    IO(Http) ! Http.Bind(actor, interface = "localhost", port = port)
+    val future = IO(Http) ? Http.Bind(actor, interface = "localhost", port = port)
+    Await.result(future, timeout.duration)
     actor
   }
 
