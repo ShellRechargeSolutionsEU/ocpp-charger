@@ -45,7 +45,7 @@ class ConnectorActor(service: ConnectorService)
   }
 
   onTransition {
-    case _ -> Charging => { log.debug("Setting timer for meterValue"); setTimer("meterValueTimer", SendMeterValue, 100 millis, true) }
+    case _ -> Charging => { log.debug("Setting timer for meterValue"); setTimer("meterValueTimer", SendMeterValue, 20 seconds, true) }
     case Charging -> _ => cancelTimer("meterValueTimer")
   }
 

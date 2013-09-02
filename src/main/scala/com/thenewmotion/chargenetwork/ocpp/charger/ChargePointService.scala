@@ -4,17 +4,23 @@ import com.typesafe.scalalogging.slf4j.Logging
 import com.thenewmotion.ocpp.chargepoint._
 import com.thenewmotion.ocpp.chargepoint.DataTransferReq
 import com.thenewmotion.ocpp.DataTransferStatus
-import akka.actor.ActorRef
+import akka.actor.{Actor, Props, ActorRef}
 import akka.util.Timeout
 import akka.pattern.ask
 import scala.concurrent.duration._
 import scala.concurrent.Await
 import java.util.concurrent.TimeoutException
+import org.apache.commons.net.ftp.FTPSClient
+import java.io.ByteArrayInputStream
+import java.nio.charset.Charset
+import com.thenewmotion.time.Imports.DateTime
+import java.text.SimpleDateFormat
 
 /**
  * Implementation of ChargePointService that just logs each method call on it and does nothing else
  */
 class ChargePointService(chargerId: String, actor: ActorRef) extends ChargePoint with Logging {
+  val uploadActor = system.actorOf(Props[Uploader])
 
   def clearCache = ClearCacheRes(accepted = false)
 
@@ -24,7 +30,11 @@ class ChargePointService(chargerId: String, actor: ActorRef) extends ChargePoint
 
   def unlockConnector(req: UnlockConnectorReq) = UnlockConnectorRes(accepted = false)
 
-  def getDiagnostics(req: GetDiagnosticsReq) = GetDiagnosticsRes(None)
+  def getDiagnostics(req: GetDiagnosticsReq) = {
+    val fileName = "test-getdiagnostics-upload"
+    uploadActor ! UploadJob(req.location, fileName)
+    GetDiagnosticsRes(Some(fileName))
+  }
 
   def changeConfiguration(req: ChangeConfigurationReq) = ChangeConfigurationRes(ConfigurationStatus.NotSupported)
 
@@ -57,3 +67,27 @@ class ChargePointService(chargerId: String, actor: ActorRef) extends ChargePoint
   }
 }
 
+class Uploader extends Actor with Logging {
+  def receive = {
+    case UploadJob(location, filename) =>
+      logger.debug("Uploader being run")
+      val client = new FTPSClient()
+      try {
+        client.connect(location.getHost)
+        val authPart = location.getAuthority
+        val userAndPasswd = authPart.split("@")(0).split(":")
+        val loggedIn = client.login(userAndPasswd(0), userAndPasswd(1))
+        logger.debug(if (loggedIn) "Uploader logged in" else "FTP login failed")
+        val dateTimeString = new SimpleDateFormat("yyyyMMddHHmmssz").format(DateTime.now.toDate)
+        val remoteName = s"${location.getPath}/${filename}.$dateTimeString"
+        client.enterLocalPassiveMode
+        logger.debug(s"Storing file at $remoteName")
+        val success = client.storeFile(remoteName, new ByteArrayInputStream("zlorg".getBytes(Charset.defaultCharset())))
+        logger.info(s"Uploader completed ${if (success) "successfully: " else "with error: "} ${client.getReplyString}")
+      } catch {
+        case e: Exception => logger.error("Uploading diagnostics failed", e)
+      }
+  }
+}
+
+case class UploadJob(location: com.thenewmotion.ocpp.Uri, filename: String)
