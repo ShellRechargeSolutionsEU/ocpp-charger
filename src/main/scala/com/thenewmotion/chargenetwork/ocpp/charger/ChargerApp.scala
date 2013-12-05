@@ -14,6 +14,7 @@ object ChargerApp {
     object config extends ScallopConf(args) {
       val chargerId = opt[String]("id", descr = "Charge point ID of emulated charge point", default = Some("00055103978E"))
       val numberOfConnectors = opt[Int]("connectors", descr = "Number of connectors of emulated charge point", default = Some(2))
+      val passId = opt[String]("pass-id", descr = "RFID of pass to try to start sessions with", default = Some("3E60A5E2"))
       val protocolVersion = opt[String]("protocol-version", descr = "OCPP version (either \"1.2\" or \"1.5\"", default = Some("1.5"))
       val listenPort = opt[Short]("listen", descr = "TCP port to listen on for remote commands", default = Some(8084.toShort))
       val chargeServerUrl = trailArg[String](descr = "Charge server URL base (without trailing slash)", default = Some("http://127.0.0.1:8081"))
@@ -29,7 +30,7 @@ object ChargerApp {
     val charger = new OcppCharger(config.chargerId(), config.numberOfConnectors(), version, url, server)
 
     (0 until config.numberOfConnectors()) map {
-      c => system.actorOf(Props(new UserActor(charger.chargerActor, c, ActionIterator())))
+      c => system.actorOf(Props(new UserActor(charger.chargerActor, c, ActionIterator(config.passId()))))
     }
   }
 }

@@ -12,9 +12,9 @@ trait ActionIterator {
 }
 
 object ActionIterator {
-  def random(): ActionIterator = new RandomIterator
+  def random(card: String): ActionIterator = new RandomIterator(card)
 
-  def apply(): ActionIterator = random()
+  def apply(card: String): ActionIterator = random(card)
 
   sealed trait UserAction
   case object Plug extends UserAction
@@ -22,13 +22,13 @@ object ActionIterator {
   case class SwipeCard(card: String) extends UserAction
 }
 
-class RandomIterator extends ActionIterator {
+class RandomIterator(card: String) extends ActionIterator {
   private val Random = new Random()
 
 
   def next(): UserAction = Random.nextInt(4) match {
     case 0 => Plug
     case 1 => Unplug
-    case _ => SwipeCard("3E60A5E2")
+    case _ => SwipeCard(card)
   }
 }
