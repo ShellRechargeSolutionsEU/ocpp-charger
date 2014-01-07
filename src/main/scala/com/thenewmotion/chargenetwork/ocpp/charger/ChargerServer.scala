@@ -3,20 +3,21 @@ package ocpp.charger
 
 import akka.actor.{Actor, Props, ActorRef}
 import akka.io.IO
-import akka.pattern.ask
+import akka.pattern.{ask, pipe}
 import akka.util.Timeout
-import com.thenewmotion.ocpp.chargepoint.ChargePoint
-import com.thenewmotion.ocpp.spray.OcppProcessing
+import com.thenewmotion.ocpp.chargepoint.{ChargePoint, Req => CpReq, Res => CpRes}
+import com.thenewmotion.ocpp.spray.{ChargerInfo, OcppProcessing}
 import com.typesafe.scalalogging.slf4j.Logging
 import _root_.spray.can.Http
 import _root_.spray.http.{HttpResponse, HttpRequest}
 import java.net.URI
 import scala.concurrent.duration._
-import scala.concurrent.Await
+import scala.concurrent.{ExecutionContext, Await, Future}
 
 class ChargerServer(port: Int) {
 
   import ChargerServer._
+  implicit val ec: ExecutionContext = system.dispatcher
 
   val actor: ActorRef = {
     implicit val timeout = Timeout(1 second)
@@ -34,14 +35,17 @@ class ChargerServer(port: Int) {
     def receive = {
       case Register(chargerId, cp) => map = map + (chargerId -> cp)
       case Http.Connected(_, _) => sender ! Http.Register(self)
-      case req: HttpRequest => sender ! handleRequest(req)
+      case req: HttpRequest => handleRequest(req) pipeTo sender
     }
 
-    def handleRequest(req: HttpRequest): HttpResponse = {
-      val result = OcppProcessing[ChargePoint](req, x => map.get(x.chargerId))
-      result match {
-        case Left(error) => error
-        case Right((chargerId, msg)) => msg()
+    def handleRequest(req: HttpRequest): Future[HttpResponse] = {
+      OcppProcessing[CpReq, CpRes](req) {
+        case (chargerInfo: ChargerInfo, cpReq: CpReq) => {
+          map.get(chargerInfo.chargerId) match {
+            case None => Future.failed(new NoSuchElementException(s"I am not charger ${chargerInfo.chargerId}"))
+            case Some(chargePoint) => Future.successful(chargePoint(cpReq))
+          }
+        }
       }
     }
   }
