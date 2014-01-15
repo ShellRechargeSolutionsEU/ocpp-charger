@@ -1,8 +1,8 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
 import com.typesafe.scalalogging.slf4j.Logging
-import com.thenewmotion.ocpp.chargepoint._
-import com.thenewmotion.ocpp.chargepoint.DataTransferReq
+import com.thenewmotion.ocpp.messages.chargepoint._
+import com.thenewmotion.ocpp.messages.chargepoint.DataTransferReq
 import com.thenewmotion.ocpp.DataTransferStatus
 import akka.actor.{Actor, Props, ActorRef}
 import akka.util.Timeout

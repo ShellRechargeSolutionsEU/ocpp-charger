@@ -1,7 +1,7 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
 //import com.thenewmotion.ocpp._
-import com.thenewmotion.ocpp.centralsystem._
+import com.thenewmotion.ocpp.messages.centralsystem._
 import com.thenewmotion.time.Imports._
 import scala.concurrent.duration.FiniteDuration
 

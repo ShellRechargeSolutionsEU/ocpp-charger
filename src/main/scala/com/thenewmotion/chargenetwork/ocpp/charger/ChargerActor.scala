@@ -2,7 +2,7 @@ package com.thenewmotion.chargenetwork.ocpp.charger
 
 import akka.actor._
 import scala.concurrent.duration._
-import com.thenewmotion.ocpp.chargepoint._
+import com.thenewmotion.ocpp.messages.chargepoint._
 import scala.concurrent.Future
 
 /**

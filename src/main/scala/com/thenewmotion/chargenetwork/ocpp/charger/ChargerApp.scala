@@ -1,7 +1,7 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
 import akka.actor.Props
-import com.thenewmotion.ocpp.Version
+import com.thenewmotion.ocpp.soap.Version
 import java.net.URI
 import org.rogach.scallop._
 

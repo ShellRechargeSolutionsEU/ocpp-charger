@@ -5,7 +5,7 @@ import akka.actor.{Actor, Props, ActorRef}
 import akka.io.IO
 import akka.pattern.{ask, pipe}
 import akka.util.Timeout
-import com.thenewmotion.ocpp.chargepoint.{ChargePoint, Req => CpReq, Res => CpRes}
+import com.thenewmotion.ocpp.messages.chargepoint.{ChargePoint, Req => CpReq, Res => CpRes}
 import com.thenewmotion.ocpp.spray.{ChargerInfo, OcppProcessing}
 import com.typesafe.scalalogging.slf4j.Logging
 import _root_.spray.can.Http

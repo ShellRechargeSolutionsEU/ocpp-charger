@@ -3,7 +3,8 @@ package com.thenewmotion.chargenetwork.ocpp.charger
 import java.net.URI
 import dispatch.Http
 import akka.actor.Props
-import com.thenewmotion.ocpp.{CentralSystemClient, Version}
+import com.thenewmotion.ocpp.CentralSystemClient
+import com.thenewmotion.ocpp.soap.Version
 
 class OcppCharger(chargerId: String,
                   numConnectors: Int,

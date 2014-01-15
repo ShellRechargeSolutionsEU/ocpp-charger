@@ -1,6 +1,6 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
-import util.Random
+import scala.util.Random
 import ActionIterator._
 
 /**
