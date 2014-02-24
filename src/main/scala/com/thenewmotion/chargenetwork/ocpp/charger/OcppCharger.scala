@@ -9,9 +9,10 @@ class OcppCharger(chargerId: String,
                   numConnectors: Int,
                   ocppVersion: Version.Value,
                   centralSystemURL: URI,
-                  server: ChargerServer) {
+                  server: ChargerServer,
+                  http: Http = new Http) {
 
-  val client = CentralSystemClient(chargerId, ocppVersion, centralSystemURL, new Http, Some(server.url))
+  val client = CentralSystemClient(chargerId, ocppVersion, centralSystemURL, http, Some(server.url))
   val chargerActor = system.actorOf(Props(new ChargerActor(BosService(chargerId, client), numConnectors)))
   server.actor ! ChargerServer.Register(chargerId, new ChargePointService(chargerId, chargerActor))
 }
