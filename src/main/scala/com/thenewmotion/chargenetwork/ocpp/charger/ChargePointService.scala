@@ -79,8 +79,8 @@ class Uploader extends Actor with Logging {
         val loggedIn = client.login(userAndPasswd(0), userAndPasswd(1))
         logger.debug(if (loggedIn) "Uploader logged in" else "FTP login failed")
         val dateTimeString = new SimpleDateFormat("yyyyMMddHHmmssz").format(DateTime.now.toDate)
-        val remoteName = s"${location.getPath}/${filename}.$dateTimeString"
-        client.enterLocalPassiveMode
+        val remoteName = s"${location.getPath}/$filename.$dateTimeString"
+        client.enterLocalPassiveMode()
         logger.debug(s"Storing file at $remoteName")
         val success = client.storeFile(remoteName, new ByteArrayInputStream("zlorg".getBytes(Charset.defaultCharset())))
         logger.info(s"Uploader completed ${if (success) "successfully: " else "with error: "} ${client.getReplyString}")
