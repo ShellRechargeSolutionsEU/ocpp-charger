@@ -2,7 +2,7 @@ package com.thenewmotion.chargenetwork.ocpp.charger
 
 import akka.actor._
 import scala.concurrent.duration._
-import com.thenewmotion.ocpp.messages.chargepoint._
+import com.thenewmotion.ocpp.messages._
 import scala.concurrent.Future
 
 /**
@@ -127,7 +127,7 @@ class ChargerActor(service: BosService, numberOfConnectors: Int = 1)
       stay()
   }
 
-  initialize
+  initialize()
 
   def startConnector(c: Int) {
     context.actorOf(Props(new ConnectorActor(service.connector(c))), c.toString)

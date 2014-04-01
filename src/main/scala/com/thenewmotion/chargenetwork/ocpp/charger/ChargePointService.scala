@@ -1,9 +1,8 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
 import com.typesafe.scalalogging.slf4j.Logging
-import com.thenewmotion.ocpp.messages.chargepoint._
-import com.thenewmotion.ocpp.messages.chargepoint.DataTransferReq
-import com.thenewmotion.ocpp.DataTransferStatus
+import com.thenewmotion.ocpp.messages._
+import chargepoint._
 import akka.actor.{Actor, Props, ActorRef}
 import akka.util.Timeout
 import akka.pattern.ask
@@ -15,6 +14,7 @@ import java.io.ByteArrayInputStream
 import java.nio.charset.Charset
 import com.thenewmotion.time.Imports.DateTime
 import java.text.SimpleDateFormat
+import java.net.URI
 
 /**
  * Implementation of ChargePointService that just logs each method call on it and does nothing else
@@ -56,7 +56,7 @@ class ChargePointService(chargerId: String, actor: ActorRef) extends ChargePoint
 
   def cancelReservation(req: CancelReservationReq) = CancelReservationRes(accepted = false)
 
-  override def apply[REQ <: Req, RES <: Res](req: REQ)(implicit reqRes: ReqRes[REQ, RES]) = {
+  override def apply[REQ <: ChargePointReq, RES <:ChargePointRes](req: REQ)(implicit reqRes: ReqRes[REQ, RES]) = {
     implicit val timeout = Timeout(500 millis)
     val future = actor ? req
     val res = try Await.result(future, timeout.duration).asInstanceOf[RES] catch {
@@ -90,4 +90,4 @@ class Uploader extends Actor with Logging {
   }
 }
 
-case class UploadJob(location: com.thenewmotion.ocpp.Uri, filename: String)
+case class UploadJob(location: URI, filename: String)

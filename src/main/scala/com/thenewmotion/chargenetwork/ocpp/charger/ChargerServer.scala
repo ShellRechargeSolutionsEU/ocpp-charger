@@ -5,7 +5,8 @@ import akka.actor.{Actor, Props, ActorRef}
 import akka.io.IO
 import akka.pattern.{ask, pipe}
 import akka.util.Timeout
-import com.thenewmotion.ocpp.messages.chargepoint.{ChargePoint, Req => CpReq, Res => CpRes}
+import com.thenewmotion.ocpp.messages._
+import chargepoint._
 import com.thenewmotion.ocpp.spray.{ChargerInfo, OcppProcessing}
 import com.typesafe.scalalogging.slf4j.Logging
 import _root_.spray.can.Http
@@ -39,8 +40,8 @@ class ChargerServer(port: Int) {
     }
 
     def handleRequest(req: HttpRequest): Future[HttpResponse] = {
-      OcppProcessing[CpReq, CpRes](req) {
-        case (chargerInfo: ChargerInfo, cpReq: CpReq) => {
+      OcppProcessing[ChargePointReq, ChargePointRes](req) {
+        case (chargerInfo: ChargerInfo, cpReq: ChargePointReq) => {
           map.get(chargerInfo.chargerId) match {
             case None => Future.failed(new NoSuchElementException(s"I am not charger ${chargerInfo.chargerId}"))
             case Some(chargePoint) => Future.successful(chargePoint(cpReq))

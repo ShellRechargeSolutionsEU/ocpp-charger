@@ -1,6 +1,6 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
-import com.thenewmotion.ocpp.messages.centralsystem.ChargePointErrorCode
+import com.thenewmotion.ocpp.messages.ChargePointErrorCode
 
 /**
  * @author Yaroslav Klymko

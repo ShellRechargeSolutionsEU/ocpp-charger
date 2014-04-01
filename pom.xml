@@ -17,7 +17,8 @@
     <properties>
         <akka.version>2.2.3</akka.version>
         <spray.version>1.2.0</spray.version>
-        <ocpp.version>3.8-SNAPSHOT</ocpp.version>
+        <ocpp.version>4.0-SNAPSHOT</ocpp.version>
+        <json4s.version>3.2.4</json4s.version>
     </properties>
 
     <repositories>
@@ -52,12 +53,12 @@
 
         <dependency>
             <groupId>com.thenewmotion.ocpp</groupId>
-            <artifactId>ocpp-common_${scala.version}</artifactId>
+            <artifactId>ocpp-spray_${scala.version}</artifactId>
             <version>${ocpp.version}</version>
         </dependency>
         <dependency>
             <groupId>com.thenewmotion.ocpp</groupId>
-            <artifactId>ocpp-spray_${scala.version}</artifactId>
+            <artifactId>ocpp-json_${scala.version}</artifactId>
             <version>${ocpp.version}</version>
         </dependency>
         <dependency>
@@ -112,6 +113,16 @@
           <groupId>commons-net</groupId>
           <artifactId>commons-net</artifactId>
           <version>3.3</version>
+        </dependency>
+        <dependency>
+            <groupId>io.backchat.hookup</groupId>
+            <artifactId>hookup_${scala.version}</artifactId>
+            <version>0.2.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.json4s</groupId>
+            <artifactId>json4s-native_${scala.version}</artifactId>
+            <version>${json4s.version}</version>
         </dependency>
     </dependencies>
 
