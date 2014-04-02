@@ -54,38 +54,15 @@ trait DummyWebSocketComponent extends WebSocketComponent {
     WebSocketClientApp.system.scheduler.scheduleOnce(FiniteDuration(500, "milliseconds"))(onMessage(testGetConfigurationReq))
     WebSocketClientApp.system.scheduler.scheduleOnce(FiniteDuration(1, "second"))(onMessage(testReserveNowReq))
   }
-
-  def webSocketConnection = new MockWebSocketConnection
 }
 
 trait HookupClientWebSocketComponent extends WebSocketComponent {
-  /* Configuration options */
-
-  /** The URI to connect to; a slash and the charge point ID will be appended automatically. */
-  def uri: URI
-
-  /** How often we should send a WebSocket ping */
-  def pingTimeout: Timeout = Timeout(60.seconds)
-
-  /** The execution context to use */
-  def executionContext = HookupClient.executionContext
-
-  /** The ID of the charger to make a connection for */
-  def chargerId: String
-
-  private def uriWithChargerId: URI = {
-    val pathWithChargerId = uri.getPath + s"/$chargerId"
-    new URI(uri.getScheme, uri.getUserInfo, uri.getHost, uri.getPort, pathWithChargerId, uri.getQuery, uri.getFragment)
-  }
-
 
   private val ocppProtocol = "ocpp1.5"
 
-  class HookupClientWebSocketConnection extends WebSocketConnection with Logging {
+  class HookupClientWebSocketConnection(chargerId: String, config: HookupClientConfig) extends WebSocketConnection with Logging {
 
-    private val hookupClientConfig = HookupClientConfig(uri = uriWithChargerId,
-      pinging = pingTimeout,
-      executionContext = executionContext)
+    private val hookupClientConfig = HookupClientConfig(uri = uriWithChargerId(config.uri, chargerId))
 
     private val client = new DefaultHookupClient(hookupClientConfig) {
       def receive: Receive = {
@@ -104,10 +81,17 @@ trait HookupClientWebSocketComponent extends WebSocketComponent {
       }
     }
 
-    def send(jval: JValue) = client.send(jval)
+    private def uriWithChargerId(base: URI, chargerId: String): URI = {
+      val pathWithChargerId = base.getPath + s"/$chargerId"
+      new URI(base.getScheme, base.getUserInfo, base.getHost, base.getPort, pathWithChargerId, base.getQuery,
+        base.getFragment)
+    }
+
+    def send(jval: JValue) = {
+      logger.debug("Sending with Hookup: {}", jval)
+      client.send(jval)
+    }
 
     client.connect(ocppProtocol)
   }
-
-  def webSocketConnection = new HookupClientWebSocketConnection
 }

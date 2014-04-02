@@ -9,6 +9,7 @@ import akka.actor.ActorSystem
 import com.thenewmotion.ocpp.messages.BootNotificationReq
 import scala.Some
 import java.net.URI
+import io.backchat.hookup.HookupClientConfig
 
 // problemen:
 //  * Het is nu echt een zooi tussen synchroon / asynchroon
@@ -82,9 +83,13 @@ object WebSocketClientApp extends App {
   }
   */
 
-  val c = new ChargePointOcppConnectionComponent with HookupClientWebSocketComponent {
-    lazy val uri = new URI("http://localhost:8080/ocppws")
-    def chargerId = "REFACHA"
+  val c = new ChargePointOcppConnectionComponent with DefaultSrpcComponent with HookupClientWebSocketComponent {
+    val webSocketConnection = new HookupClientWebSocketConnection(chargerId = "REFACHA",
+      HookupClientConfig(uri = new URI("http://localhost:8080/ocppws")))
+
+    val srpcConnection = new DefaultSrpcConnection
+
+    val ocppConnection = new ChargePointOcppConnection
 
     def onRequest(req: ChargePointReq): Future[Either[OcppError, ChargePointRes]] = Future {
       req match {

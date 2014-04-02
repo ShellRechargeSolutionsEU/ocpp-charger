@@ -11,19 +11,17 @@ import org.json4s._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait OcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, OUTRES <: Res] {
-  this: WebSocketComponent =>
+  this: SrpcConnectionComponent =>
 
   trait OcppConnection {
     /** Send an outgoing OCPP request */
     def sendRequest(req: OUTREQ): Future[Either[OcppError, INRES]]
 
-    /** Handle an incoming JSON message */
-    def onMessage(jval: JValue)
+    /** Handle an incoming SRPC message */
+    def onSrpcMessage(msg: TransportMessage)
   }
 
   def ocppConnection: OcppConnection
-
-  def onMessage(jval: JValue) = ocppConnection.onMessage(jval)
 
   def onRequest(req: INREQ): Future[Either[OcppError, OUTRES]]
   def onOcppError(error: OcppError)
@@ -32,7 +30,7 @@ trait OcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, OUTRES 
 trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, OUTRES <: Res]
   extends OcppConnectionComponent[OUTREQ, INRES, INREQ, OUTRES] {
 
-  this: WebSocketComponent =>
+  this: SrpcConnectionComponent =>
 
   trait DefaultOcppConnection extends OcppConnection with Logging {
     /** The operations that the other side can request from us */
@@ -43,17 +41,17 @@ trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, 
 
     private val callIdCache: mutable.Map[String, Class[Message]] = mutable.Map()
 
-    def onMessage(msg: JValue) {
-      TransportMessageParser.parse(msg) match {
+    def onSrpcMessage(msg: TransportMessage) {
+      msg match {
         case req: RequestMessage =>
           val op = ourOperations.jsonOpForActionName(req.procedureName) // TODO handle exn
         val ocppMsg = op.deserializeReq(req.payload)
-          val responseJson = onRequest(ocppMsg) map {
-            responseToJson(req.callId, op, _)
+          val responseSrpc = onRequest(ocppMsg) map {
+            responseToSrpc(req.callId, _)
           }
 
-          responseJson onComplete {
-            case Success(json) => webSocketConnection.send(json)
+          responseSrpc onComplete {
+            case Success(json) => srpcConnection.send(json)
             case Failure(e) => // TODO
           }
         case res: ResponseMessage => logger.info(s"Got a response: $res")
@@ -62,17 +60,15 @@ trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, 
       }
     }
 
-    private def responseToJson[REQ <: INREQ, RES <: OUTRES](callId: String, op: JsonOperation[REQ, RES], response: Either[OcppError, OUTRES]): JValue =
-      TransportMessageParser.writeJValue {
-        response match {
-          case Left(error) => ErrorResponseMessage(callId, error.error, error.description)
-          case Right(res) => ResponseMessage(callId, Ocpp15J.serialize(res))
-        }
+    private def responseToSrpc[REQ <: INREQ, RES <: OUTRES](callId: String, response: Either[OcppError, OUTRES]): TransportMessage =
+      response match {
+        case Left(error) => ErrorResponseMessage(callId, error.error, error.description)
+        case Right(res) => ResponseMessage(callId, Ocpp15J.serialize(res))
       }
 
     def sendRequest(req: OUTREQ) = {
       val callId = callIdGenerator.next()
-      webSocketConnection.send(TransportMessageParser.writeJValue(RequestMessage(callId, getProcedureName(req), Ocpp15J.serialize(req))))
+      srpcConnection.send(RequestMessage(callId, getProcedureName(req), Ocpp15J.serialize(req)))
       Future {
         Left(OcppError(PayloadErrorCode.NotImplemented, "We don't handle responses yet :)"))
       }
@@ -87,14 +83,14 @@ trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, 
   def onRequest(req: INREQ): Future[Either[OcppError, OUTRES]]
   def onOcppError(error: OcppError): Unit
 
-  def onError(e: Throwable) = ???
+  def onSrpcMessage(msg: TransportMessage) = ocppConnection.onSrpcMessage(msg)
 }
 
 trait ChargePointOcppConnectionComponent
   extends DefaultOcppConnectionComponent[CentralSystemReq, CentralSystemRes, ChargePointReq, ChargePointRes] {
-  this: WebSocketComponent =>
+  this: SrpcConnectionComponent =>
 
-  def ocppConnection = new DefaultOcppConnection {
+  class ChargePointOcppConnection extends DefaultOcppConnection {
     val ourOperations = ChargePointOperations
     val theirOperations = CentralSystemOperations
   }
