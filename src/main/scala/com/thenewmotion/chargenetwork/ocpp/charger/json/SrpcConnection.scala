@@ -4,7 +4,7 @@ import com.thenewmotion.ocpp.json.{TransportMessageParser, TransportMessage}
 import org.json4s.JValue
 import com.typesafe.scalalogging.slf4j.Logging
 
-trait SrpcConnectionComponent {
+trait SrpcComponent {
   trait SrpcConnection {
     def send(msg: TransportMessage)
   }
@@ -14,7 +14,7 @@ trait SrpcConnectionComponent {
   def onSrpcMessage(msg: TransportMessage)
 }
 
-trait DefaultSrpcComponent extends SrpcConnectionComponent with Logging {
+trait DefaultSrpcComponent extends SrpcComponent with Logging {
   this: WebSocketComponent =>
 
   class DefaultSrpcConnection extends SrpcConnection {

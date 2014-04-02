@@ -7,11 +7,10 @@ import scala.concurrent.Future
 import scala.util.{Success, Failure}
 import com.typesafe.scalalogging.slf4j.Logging
 import scala.collection.mutable
-import org.json4s._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait OcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, OUTRES <: Res] {
-  this: SrpcConnectionComponent =>
+  this: SrpcComponent =>
 
   trait OcppConnection {
     /** Send an outgoing OCPP request */
@@ -30,7 +29,7 @@ trait OcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, OUTRES 
 trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, OUTRES <: Res]
   extends OcppConnectionComponent[OUTREQ, INRES, INREQ, OUTRES] {
 
-  this: SrpcConnectionComponent =>
+  this: SrpcComponent =>
 
   trait DefaultOcppConnection extends OcppConnection with Logging {
     /** The operations that the other side can request from us */
@@ -88,7 +87,7 @@ trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, 
 
 trait ChargePointOcppConnectionComponent
   extends DefaultOcppConnectionComponent[CentralSystemReq, CentralSystemRes, ChargePointReq, ChargePointRes] {
-  this: SrpcConnectionComponent =>
+  this: SrpcComponent =>
 
   class ChargePointOcppConnection extends DefaultOcppConnection {
     val ourOperations = ChargePointOperations

@@ -12,7 +12,6 @@ import com.thenewmotion.ocpp.json._
 import com.thenewmotion.ocpp.messages.RemoteStopTransactionRes
 import com.thenewmotion.ocpp.json.RequestMessage
 import com.thenewmotion.ocpp.json.ResponseMessage
-import com.thenewmotion.chargenetwork.ocpp.charger.json.OcppError
 
 class DefaultOcppConnectionSpec extends SpecificationWithJUnit with Mockito {
 
@@ -36,13 +35,23 @@ class DefaultOcppConnectionSpec extends SpecificationWithJUnit with Mockito {
       }
     }
 
-
     "respond to requests with an error message if processing fails" in new DefaultOcppConnectionScope {
       onRequest.apply(any) returns Left(OcppError(PayloadErrorCode.FormationViolation, "aargh!"))
 
       testConnection.onSrpcMessage(srpcRemoteStopTransactionReq)
 
       awaitFirstSentMessage must beAnInstanceOf[ErrorResponseMessage]
+    }
+
+    "give incoming responses back to the caller" in new DefaultOcppConnectionScope {
+      val srpcHeartbeatRes = ResponseMessage("test-call-id", "currentTime" -> "2014-03-31T14:00:00Z")
+      val futureResponse = testConnection.ocppConnection.sendRequest(HeartbeatReq)
+
+      val callId = awaitFirstSentMessage.asInstanceOf[RequestMessage].callId
+
+      testConnection.onSrpcMessage(srpcHeartbeatRes)
+
+      Await.result(futureResponse, FiniteDuration(1, "second")) must beRight
     }
   }
 
@@ -58,7 +67,7 @@ class DefaultOcppConnectionSpec extends SpecificationWithJUnit with Mockito {
 
     def awaitFirstSentMessage: TransportMessage = Await.result(sentSrpcMessage, FiniteDuration(1, "second"))
 
-    val testConnection = new ChargePointOcppConnectionComponent with SrpcConnectionComponent {
+    val testConnection = new ChargePointOcppConnectionComponent with SrpcComponent {
       val srpcConnection = new SrpcConnection {
         def send(msg: TransportMessage) = sentSrpcMessagePromise.success(msg)
       }
