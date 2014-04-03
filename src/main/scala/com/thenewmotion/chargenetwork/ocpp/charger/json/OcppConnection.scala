@@ -3,7 +3,7 @@ package com.thenewmotion.chargenetwork.ocpp.charger.json
 import com.thenewmotion.ocpp.messages._
 import com.thenewmotion.ocpp.json._
 import v15.Ocpp15J
-import scala.concurrent.Future
+import scala.concurrent.{Promise, Future}
 import scala.util.{Success, Failure}
 import com.typesafe.scalalogging.slf4j.Logging
 import scala.collection.mutable
@@ -22,6 +22,7 @@ trait OcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, OUTRES 
 
   def ocppConnection: OcppConnection
 
+  // XXX or shouldn't we allow application code to send arbitrary OCPP errors?
   def onRequest(req: INREQ): Future[Either[OcppError, OUTRES]]
   def onOcppError(error: OcppError)
 }
@@ -38,24 +39,45 @@ trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, 
 
     private val callIdGenerator = CallIdGenerator()
 
-    private val callIdCache: mutable.Map[String, Class[Message]] = mutable.Map()
+    case class OutstandingRequest(operation: JsonOperation[_ <: OUTREQ, _ <: INRES],
+                                  responsePromise: Promise[Either[OcppError, _ <: INRES]])
+
+    private val callIdCache: mutable.Map[String, OutstandingRequest] = mutable.Map()
 
     def onSrpcMessage(msg: TransportMessage) {
       msg match {
         case req: RequestMessage =>
           val op = ourOperations.jsonOpForActionName(req.procedureName) // TODO handle exn
-        val ocppMsg = op.deserializeReq(req.payload)
-          val responseSrpc = onRequest(ocppMsg) map {
-            responseToSrpc(req.callId, _)
+          val ocppMsg = op.deserializeReq(req.payload)
+          val responseSrpc = onRequest(ocppMsg) recover {
+            case e: Throwable =>
+              logger.error(s"OCPP request processing for ${req.procedureName} threw exception", e)
+              Left(OcppError(PayloadErrorCode.InternalError, "Unexpected error processing request"))
+          } map {
+              responseToSrpc(req.callId, _)
           }
 
           responseSrpc onComplete {
             case Success(json) => srpcConnection.send(json)
-            case Failure(e) => // TODO
+            case Failure(e) =>
           }
+
         case res: ResponseMessage => logger.info(s"Got a response: $res")
-        case err: ErrorResponseMessage => logger.info(s"Got an error: $err")
-        // TODO: handle exception
+          callIdCache.get(res.callId) match {
+            case None =>
+              logger.info("Received response for no request: {}", res)
+            case Some(OutstandingRequest(op, resPromise)) =>
+              val response = op.deserializeRes(res.payload)
+              resPromise.success(Right(response))
+          }
+
+        case ErrorResponseMessage(callId, errCode, description, details) =>
+          callIdCache.get(callId) match {
+            case None => logger.error("Received OCPP error with unrecognized call ID {}: {} {}",
+              callId, errCode, description)
+            case Some(OutstandingRequest(operation, futureResponse)) =>
+              futureResponse success Left(OcppError(errCode, description))
+          }
       }
     }
 
@@ -65,18 +87,19 @@ trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, 
         case Right(res) => ResponseMessage(callId, Ocpp15J.serialize(res))
       }
 
-    def sendRequest(req: OUTREQ) = {
+    def sendRequest(req: OUTREQ): Future[Either[OcppError, INRES]] = {
       val callId = callIdGenerator.next()
+      val operationName = getProcedureName(req)
+      val responsePromise = Promise[Either[OcppError, INRES]]()
+
+      callIdCache.put(callId, OutstandingRequest(theirOperations.jsonOpForActionName(operationName), responsePromise))
       srpcConnection.send(RequestMessage(callId, getProcedureName(req), Ocpp15J.serialize(req)))
-      Future {
-        Left(OcppError(PayloadErrorCode.NotImplemented, "We don't handle responses yet :)"))
-      }
+      responsePromise.future
     }
 
     private def getProcedureName(c: Message) = {
       c.getClass.getSimpleName.replaceFirst("Re[qs]\\$?$", "")
     }
-
   }
 
   def onRequest(req: INREQ): Future[Either[OcppError, OUTRES]]
