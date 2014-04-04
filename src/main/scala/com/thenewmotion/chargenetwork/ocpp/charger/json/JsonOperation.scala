@@ -20,6 +20,11 @@ class JsonOperation[REQ <: Req : JsonDeserializable : ClassTag, RES <: Res : Jso
 }
 
 trait JsonOperations[REQ <: Req, RES <: Res] {
+  sealed trait LookupResult
+  case object NotImplemented extends LookupResult
+  case object Unsupported extends LookupResult
+  case class Supported(op: JsonOperation[_ <: REQ, _ <: RES]) extends LookupResult
+
   def enum: Enumeration
 
   def operations: Traversable[JsonOperation[_ <: REQ, _ <: RES]]
@@ -30,17 +35,17 @@ trait JsonOperations[REQ <: Req, RES <: Res] {
   def jsonOpForAction(action: Enumeration#Value): Option[JsonOperation[_ <: REQ, _ <: RES]] =
     operations.find(_.action == action)
 
-  def jsonOpForActionName(operationName: String): JsonOperation[_ <: REQ, _ <: RES] = {
-    val requestedAction = enum.withNameOpt(operationName) match {
-      case Some(action) => action
-      case None         => throw new NotImplementedOperationException(operationName)
-    }
-    jsonOpForAction(requestedAction) match {
-      case Some(jsonAction) => jsonAction
-      case None             => throw new UnsupportedOperationException(operationName)
+  def jsonOpForActionName(operationName: String): LookupResult = {
+    enum.withNameOpt(operationName) match {
+      case Some(action) => jsonOpForAction(action) match {
+        case None => Unsupported
+        case Some(jsonAction) => Supported(jsonAction)
+      }
+      case None         => NotImplemented
     }
   }
 }
+
 
 object CentralSystemOperations extends JsonOperations[CentralSystemReq, CentralSystemRes] {
 

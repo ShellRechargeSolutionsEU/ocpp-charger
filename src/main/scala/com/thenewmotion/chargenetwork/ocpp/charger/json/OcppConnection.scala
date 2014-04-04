@@ -34,8 +34,8 @@ trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, 
 
   trait DefaultOcppConnection extends OcppConnection with Logging {
     /** The operations that the other side can request from us */
-    def ourOperations: JsonOperations[INREQ, OUTRES]
-    def theirOperations: JsonOperations[OUTREQ, INRES]
+    val ourOperations: JsonOperations[INREQ, OUTRES]
+    val theirOperations: JsonOperations[OUTREQ, INRES]
 
     private val callIdGenerator = CallIdGenerator()
 
@@ -47,19 +47,31 @@ trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, 
     def onSrpcMessage(msg: TransportMessage) {
       msg match {
         case req: RequestMessage =>
-          val op = ourOperations.jsonOpForActionName(req.procedureName) // TODO handle exn
-          val ocppMsg = op.deserializeReq(req.payload)
-          val responseSrpc = onRequest(ocppMsg) recover {
-            case e: Throwable =>
-              logger.error(s"OCPP request processing for ${req.procedureName} threw exception", e)
-              Left(OcppError(PayloadErrorCode.InternalError, "Unexpected error processing request"))
-          } map {
-              responseToSrpc(req.callId, _)
-          }
+          import ourOperations._
 
-          responseSrpc onComplete {
-            case Success(json) => srpcConnection.send(json)
-            case Failure(e) =>
+          def respondWithError(errCode: PayloadErrorCode.Value, description: String) =
+            srpcConnection.send(ErrorResponseMessage(req.callId, errCode, description))
+
+          val opName = req.procedureName
+            jsonOpForActionName(opName) match {
+            case NotImplemented => respondWithError(PayloadErrorCode.NotImplemented, s"Unknown operation $opName")
+            case Unsupported => respondWithError(PayloadErrorCode.NotSupported, s"We do not support $opName")
+            case Supported(operation) =>
+              val ocppMsg = operation.deserializeReq(req.payload)
+              val responseSrpc = onRequest(ocppMsg) recover {
+                case e: Throwable =>
+                  logger.error(s"OCPP request processing for ${req.procedureName} threw exception", e)
+                  Left(OcppError(PayloadErrorCode.InternalError, "Unexpected error processing request"))
+              } map {
+                responseToSrpc(req.callId, _)
+              }
+
+              responseSrpc onComplete {
+                case Success(json) => srpcConnection.send(json)
+                case Failure(e) =>
+                  logger.error("OCPP response future failed for {} with call ID {}. This ought to be impossible.",
+                    opName, req.callId)
+              }
           }
 
         case res: ResponseMessage => logger.info(s"Got a response: $res")
@@ -92,9 +104,13 @@ trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, 
       val operationName = getProcedureName(req)
       val responsePromise = Promise[Either[OcppError, INRES]]()
 
-      callIdCache.put(callId, OutstandingRequest(theirOperations.jsonOpForActionName(operationName), responsePromise))
-      srpcConnection.send(RequestMessage(callId, getProcedureName(req), Ocpp15J.serialize(req)))
-      responsePromise.future
+      theirOperations.jsonOpForActionName(operationName) match {
+        case theirOperations.Supported(operation) =>
+          callIdCache.put (callId, OutstandingRequest(operation, responsePromise))
+          srpcConnection.send (RequestMessage (callId, getProcedureName (req), Ocpp15J.serialize (req) ) )
+          responsePromise.future
+        case _ => throw new Exception(s"Tried to send unsupported OCPP request $operationName")
+      }
     }
 
     private def getProcedureName(c: Message) = {

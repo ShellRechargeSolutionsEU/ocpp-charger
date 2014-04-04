@@ -54,6 +54,25 @@ class DefaultOcppConnectionSpec extends SpecificationWithJUnit with Mockito {
       }
     }
 
+    "respond to requests for unrecognized operations with a NotImplemented error" in new DefaultOcppConnectionScope {
+      testConnection.onSrpcMessage(srpcNonexistentOperationReq)
+
+      awaitFirstSentMessage must beLike{
+        case ErrorResponseMessage(callId, errorCode, description, details) =>
+          (callId, errorCode) mustEqual (srpcNonexistentOperationReq.callId, PayloadErrorCode.NotImplemented)
+      }
+    }
+
+    "respond to requests for recognized but unsupported operations with a NotSupported error" in new DefaultOcppConnectionScope {
+      testConnection.onSrpcMessage(srpcNotSupportedOperationReq)
+
+      awaitFirstSentMessage must beLike {
+        case ErrorResponseMessage(callId, errorCode, description, details) =>
+          (callId, errorCode) mustEqual (srpcNotSupportedOperationReq.callId, PayloadErrorCode.NotSupported)
+      }
+    }
+
+
     "give incoming responses back to the caller" in new DefaultOcppConnectionScope {
       val futureResponse = testConnection.ocppConnection.sendRequest(HeartbeatReq)
 
@@ -82,6 +101,13 @@ class DefaultOcppConnectionSpec extends SpecificationWithJUnit with Mockito {
   private trait DefaultOcppConnectionScope extends Scope {
     val srpcRemoteStopTransactionReq =
       RequestMessage("test-call-id", "RemoteStopTransaction", "transactionId" -> 3)
+
+    val srpcNonexistentOperationReq =
+      RequestMessage("test-call-id", "WorldDomination", "complete" -> 1)
+
+    val srpcNotSupportedOperationReq =
+      RequestMessage("another-test-call-id", "DataTransfer",
+        ("vendorId" -> "TheNewMotion") ~ ("messageId" -> "GaKoffieHalen") ~ ("data" -> "met suiker, zonder melk"))
 
     val onRequest = mock[ChargePointReq => Either[OcppError, ChargePointRes]]
     val onError = mock[OcppError => Unit]
