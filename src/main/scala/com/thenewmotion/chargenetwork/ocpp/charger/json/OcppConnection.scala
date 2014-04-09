@@ -36,6 +36,8 @@ trait OcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, OUTRES 
   def onOcppError(error: OcppError)
 }
 
+case class OcppError(error: PayloadErrorCode.Value, description: String)
+
 trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, OUTRES <: Res]
   extends OcppConnectionComponent[OUTREQ, INRES, INREQ, OUTRES] {
 
@@ -114,6 +116,7 @@ trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, 
         callIdCache.get(callId) match {
           case None => logger.error("Received OCPP error with unrecognized call ID {}: {} {}",
             callId, errCode, description)
+            // TODO call onOcppError and test this
           case Some(OutstandingRequest(operation, futureResponse)) =>
             futureResponse success Left(OcppError(errCode, description))
         }

@@ -7,7 +7,6 @@ import com.typesafe.scalalogging.slf4j.Logging
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import java.net.URI
-import akka.util.Timeout
 import io.backchat.hookup._
 import io.backchat.hookup.HookupClient.Receive
 import io.backchat.hookup.{HookupClientConfig, JsonMessage, TextMessage, Connected}

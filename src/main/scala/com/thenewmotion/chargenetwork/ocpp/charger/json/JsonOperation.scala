@@ -89,8 +89,6 @@ object ChargePointOperations extends JsonOperations[ChargePointReq, ChargePointR
 
 }
 
-class UnsupportedOperationException(operationName: String)
-  extends RuntimeException(s"Unsupported OCPP operation $operationName")
 
-class NotImplementedOperationException(operationName: String)
-  extends RuntimeException(s"Unknown OCPP operation $operationName")
+
+

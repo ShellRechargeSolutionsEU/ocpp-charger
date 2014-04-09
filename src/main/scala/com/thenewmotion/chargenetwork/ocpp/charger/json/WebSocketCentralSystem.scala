@@ -12,24 +12,12 @@ import java.net.URI
 import io.backchat.hookup.HookupClientConfig
 
 // problemen:
-//  * Het is nu echt een zooi tussen synchroon / asynchroon
-//    -> hoe doen we message-IDs?
-//    -> moeten we met correlatie-ID's blijven werken tot op hoogste niveau? Of toch ergens futures?
-//    -> futures?
-//   => Dit geëmmer speelt al zolang ik aan OCPP werk. Neem maar gewoon kortste weg.
 //   => TODO: see how this can be made an instance of the CentralSystem trait
 //        * Need apply to return a future there too
 //        * SOAP/JSON independent error type
 //  * Foutafhandeling: wat is het type van een OCPP-fout?
 //  More immediate TODOs:
 //   * Version-independent way to call OCPP-J functionality
-//   * Serializing to SRPC in one call
-//   * Port to json4s
-//
-//  Client zelf: sturen en ontvangen (bestaat op zich met die client, alleen subscribe-functie toevoegen)
-//  OCPP-endpoint: bevat ook toestand die correlatie-IDs bijhoudt. Methods als in dat CentralSystem dan
-
-case class OcppError(error: PayloadErrorCode.Value, description: String)
 
 trait WebSocketCentralSystem {
   def apply[REQ <: CentralSystemReq, RES <: CentralSystemRes](req: REQ)(implicit reqRes: ReqRes[REQ, RES]): Future[Either[RES, OcppError]]
