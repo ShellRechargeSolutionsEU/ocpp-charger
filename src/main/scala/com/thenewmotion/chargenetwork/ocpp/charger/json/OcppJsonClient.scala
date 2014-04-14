@@ -19,7 +19,7 @@ abstract class OcppJsonClient(chargerId: String, centralSystemUri: URI)
 
     override def onOcppError(error: OcppError): Unit = OcppJsonClient.this.onError(error)
 
-    // TODO: link up onDisconnect
+    override def onDisconnect(): Unit = OcppJsonClient.this.onDisconnect
   }
 
   def send(req: CentralSystemReq): Future[CentralSystemRes] = {
@@ -29,4 +29,6 @@ abstract class OcppJsonClient(chargerId: String, centralSystemUri: URI)
       case Left(err) => throw new RuntimeException(s"OCPP error: $err")
     }
   }
+
+  def close() = ocppStack.webSocketConnection.close()
 }

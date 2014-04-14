@@ -15,12 +15,13 @@ trait WebSocketComponent {
   trait WebSocketConnection {
     /**
      * Send a JSON message to the other party
-     *
-     * To be implemented by children implementing the WebSocket communication. To
-     * be called by users of the WebSocket connectivity.
      */
     def send(msg: JValue): Unit
 
+    /**
+     * Hang up the connection to the other party
+     */
+    def close(): Unit
   }
 
   def webSocketConnection: WebSocketConnection
@@ -38,6 +39,11 @@ trait WebSocketComponent {
    * @param e
    */
   def onError(e: Throwable)
+
+  /**
+   * Called when the WebSocket connection is disconnected
+   */
+  def onDisconnect(): Unit = {}
 }
 
 trait DummyWebSocketComponent extends WebSocketComponent {
@@ -47,6 +53,8 @@ trait DummyWebSocketComponent extends WebSocketComponent {
       val string = Serialization.write(msg)(DefaultFormats)
       logger.info(s"Sending $string")
     }
+
+    def close() = {}
 
     private val testGetConfigurationReq = JsonParser.parse( """[2, "test-call-id", "GetConfiguration", { "key": [ "KVCBX_PROFILE" ] }]""")
     private val testReserveNowReq: JValue = JsonParser.parse( """[2, "test-call-id-2", "ReserveNow", { "connectorId": 0, "expiryDate": "2013-02-01T15:09:18Z", "idTag": "044943121F1D80", "parentIdTag": "", "reservationId": 0 }]""")
@@ -66,7 +74,7 @@ trait HookupClientWebSocketComponent extends WebSocketComponent {
     private val client = new DefaultHookupClient(hookupClientConfig) {
       def receive: Receive = {
         case Connected => logger.debug("WebSocket connection connected to {}", hookupClientConfig.uri)
-        case Disconnected(_) => logger.debug("WebSocket connection disconnected from {}", hookupClientConfig.uri)
+        case Disconnected(_) => onDisconnect
         case JsonMessage(jval) =>
           logger.debug("Received JSON message {}", jval)
           onMessage(jval)
@@ -90,6 +98,8 @@ trait HookupClientWebSocketComponent extends WebSocketComponent {
       logger.debug("Sending with Hookup: {}", jval)
       client.send(jval)
     }
+
+    def close() = client.close()
 
     client.connect(ocppProtocol)
   }
