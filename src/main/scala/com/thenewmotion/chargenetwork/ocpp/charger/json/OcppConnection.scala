@@ -23,7 +23,7 @@ trait OcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, OUTRES 
 
   trait OcppConnection {
     /** Send an outgoing OCPP request */
-    def sendRequest(req: OUTREQ): Future[Either[OcppError, INRES]]
+    def sendRequest(req: OUTREQ): Future[INRES]
 
     /** Handle an incoming SRPC message */
     def onSrpcMessage(msg: TransportMessage)
@@ -31,12 +31,12 @@ trait OcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, OUTRES 
 
   def ocppConnection: OcppConnection
 
-  // XXX or shouldn't we allow application code to send arbitrary OCPP errors?
-  def onRequest(req: INREQ): Future[Either[OcppError, OUTRES]]
+  def onRequest(req: INREQ): Future[OUTRES]
   def onOcppError(error: OcppError)
 }
 
 case class OcppError(error: PayloadErrorCode.Value, description: String)
+case class OcppException(ocppError: OcppError) extends Exception(s"${ocppError.error}: ${ocppError.description}")
 
 trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, OUTRES <: Res]
   extends OcppConnectionComponent[OUTREQ, INRES, INREQ, OUTRES] {
@@ -51,7 +51,7 @@ trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, 
     private val callIdGenerator = CallIdGenerator()
 
     case class OutstandingRequest(operation: JsonOperation[_ <: OUTREQ, _ <: INRES],
-                                  responsePromise: Promise[Either[OcppError, _ <: INRES]])
+                                                responsePromise: Promise[INRES])
 
     private val callIdCache: mutable.Map[String, OutstandingRequest] = mutable.Map()
 
@@ -77,12 +77,18 @@ trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, 
         case Unsupported => respondWithError(PayloadErrorCode.NotSupported, s"We do not support $opName")
         case Supported(operation) =>
           val ocppMsg = operation.deserializeReq(req.payload)
-          val responseSrpc = onRequest(ocppMsg) recover {
-            case e: Throwable =>
-              logger.error(s"OCPP request processing for ${req.procedureName} threw exception", e)
-              Left(OcppError(PayloadErrorCode.InternalError, "Unexpected error processing request"))
-          } map {
+          val responseSrpc = onRequest(ocppMsg) map {
             responseToSrpc(req.callId, _)
+          } recover {
+            case e: Exception =>
+              logger.warn(s"Exception processing OCPP request {}: {} {}",
+                req.procedureName, e.getClass.getSimpleName, e.getMessage)
+
+              val ocppError = e match {
+                case OcppException(err) => err
+                case _ => OcppError(PayloadErrorCode.InternalError, "Unexpected error processing request")
+              }
+              ErrorResponseMessage(req.callId, ocppError.error, ocppError.description)
           }
 
           responseSrpc onComplete {
@@ -94,11 +100,8 @@ trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, 
       }
     }
 
-    private def responseToSrpc[REQ <: INREQ, RES <: OUTRES](callId: String, response: Either[OcppError, OUTRES]): TransportMessage =
-      response match {
-        case Left(error) => ErrorResponseMessage(callId, error.error, error.description)
-        case Right(res) => ResponseMessage(callId, Ocpp15J.serialize(res))
-      }
+    private def responseToSrpc[REQ <: INREQ, RES <: OUTRES](callId: String, response: OUTRES): TransportMessage =
+        ResponseMessage(callId, Ocpp15J.serialize(response))
 
 
     private def handleIncomingResponse(res: ResponseMessage) {
@@ -107,7 +110,7 @@ trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, 
           logger.info("Received response for no request: {}", res)
         case Some(OutstandingRequest(op, resPromise)) =>
           val response = op.deserializeRes(res.payload)
-          resPromise.success(Right(response))
+          resPromise.success(response)
       }
     }
 
@@ -118,18 +121,18 @@ trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, 
             callId, errCode, description)
             // TODO call onOcppError and test this
           case Some(OutstandingRequest(operation, futureResponse)) =>
-            futureResponse success Left(OcppError(errCode, description))
+            futureResponse failure new OcppException(OcppError(errCode, description))
         }
     }
 
-    def sendRequest(req: OUTREQ): Future[Either[OcppError, INRES]] = {
+    def sendRequest(req: OUTREQ): Future[INRES] = {
       val callId = callIdGenerator.next()
       val operationName = getProcedureName(req)
-      val responsePromise = Promise[Either[OcppError, INRES]]()
+      val responsePromise = Promise[INRES]()
 
       theirOperations.jsonOpForActionName(operationName) match {
         case theirOperations.Supported(operation) =>
-          callIdCache.put (callId, OutstandingRequest(operation, responsePromise))
+          callIdCache.put(callId, OutstandingRequest(operation, responsePromise))
           // TODO have a way to not hardcode the OCPP version number when (de)serializing OCPP
           srpcConnection.send (RequestMessage (callId, getProcedureName (req), Ocpp15J.serialize (req) ) )
           responsePromise.future
@@ -142,7 +145,7 @@ trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, 
     }
   }
 
-  def onRequest(req: INREQ): Future[Either[OcppError, OUTRES]]
+  def onRequest(req: INREQ): Future[OUTRES]
   def onOcppError(error: OcppError): Unit
 
   def onSrpcMessage(msg: TransportMessage) = ocppConnection.onSrpcMessage(msg)

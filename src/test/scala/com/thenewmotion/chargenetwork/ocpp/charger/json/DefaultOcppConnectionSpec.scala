@@ -18,7 +18,7 @@ class DefaultOcppConnectionSpec extends SpecificationWithJUnit with Mockito {
   "DefaultOcppConnection" should {
 
     "respond to requests with a response message" in new DefaultOcppConnectionScope {
-      onRequest.apply(any) returns Right(RemoteStopTransactionRes(true))
+      onRequest.apply(any) returns RemoteStopTransactionRes(true)
 
       testConnection.onSrpcMessage(srpcRemoteStopTransactionReq)
 
@@ -26,7 +26,7 @@ class DefaultOcppConnectionSpec extends SpecificationWithJUnit with Mockito {
     }
 
     "respond to requests with the same call ID" in new DefaultOcppConnectionScope {
-      onRequest.apply(any) returns Right(RemoteStopTransactionRes(true))
+      onRequest.apply(any) returns RemoteStopTransactionRes(true)
 
       testConnection.onSrpcMessage(srpcRemoteStopTransactionReq)
 
@@ -35,15 +35,15 @@ class DefaultOcppConnectionSpec extends SpecificationWithJUnit with Mockito {
       }
     }
 
-    "respond to requests with an error message if processing returns an OCPP error" in new DefaultOcppConnectionScope {
-      onRequest.apply(any) returns Left(OcppError(PayloadErrorCode.FormationViolation, "aargh!"))
+    "respond to requests with the applicable error message if processing throws an OCPP error" in new DefaultOcppConnectionScope {
+      onRequest.apply(any) throws new OcppException(OcppError(PayloadErrorCode.FormationViolation, "aargh!"))
 
       testConnection.onSrpcMessage(srpcRemoteStopTransactionReq)
 
       awaitFirstSentMessage must beAnInstanceOf[ErrorResponseMessage]
     }
 
-    "respond to requests with an error message if processing throws" in new DefaultOcppConnectionScope {
+    "respond to requests with an InternalError error message if processing throws an unexpected exception" in new DefaultOcppConnectionScope {
       onRequest.apply(any) throws new RuntimeException("bork")
 
       testConnection.onSrpcMessage(srpcRemoteStopTransactionReq)
@@ -81,7 +81,7 @@ class DefaultOcppConnectionSpec extends SpecificationWithJUnit with Mockito {
 
       testConnection.onSrpcMessage(srpcHeartbeatRes)
 
-      Await.result(futureResponse, FiniteDuration(1, "second")) must beRight
+      Await.result(futureResponse, FiniteDuration(1, "second")) must beAnInstanceOf[HeartbeatRes]
     }
 
     "return an error to the caller when a request is responded to with an error message" in new DefaultOcppConnectionScope {
@@ -92,10 +92,10 @@ class DefaultOcppConnectionSpec extends SpecificationWithJUnit with Mockito {
 
       testConnection.onSrpcMessage(errorRes)
 
-      val expected = Left(OcppError(PayloadErrorCode.SecurityError, "Hee! Da mag nie!"))
-      Await.result(futureResponse, FiniteDuration(1, "seconds")) mustEqual expected
+      val expectedError = OcppError(PayloadErrorCode.SecurityError, "Hee! Da mag nie!")
+      val result = Await.result(futureResponse.failed, FiniteDuration(1, "seconds"))
+      result.asInstanceOf[OcppException].ocppError mustEqual expectedError
     }
-
   }
 
   private trait DefaultOcppConnectionScope extends Scope {
@@ -109,7 +109,13 @@ class DefaultOcppConnectionSpec extends SpecificationWithJUnit with Mockito {
       RequestMessage("another-test-call-id", "DataTransfer",
         ("vendorId" -> "TheNewMotion") ~ ("messageId" -> "GaKoffieHalen") ~ ("data" -> "met suiker, zonder melk"))
 
-    val onRequest = mock[ChargePointReq => Either[OcppError, ChargePointRes]]
+    // workaround to prevent errors when making Mockito throw OcppException
+    trait OcppRequestHandler extends (ChargePointReq => ChargePointRes) {
+      @throws[OcppException]
+      def apply(req: ChargePointReq): ChargePointRes
+    }
+
+    val onRequest = mock[OcppRequestHandler]
     val onError = mock[OcppError => Unit]
 
     val sentSrpcMessagePromise = Promise[TransportMessage]()
