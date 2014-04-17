@@ -74,7 +74,7 @@ trait HookupClientWebSocketComponent extends WebSocketComponent {
     private val client = new DefaultHookupClient(hookupClientConfig) {
       def receive: Receive = {
         case Connected => logger.debug("WebSocket connection connected to {}", hookupClientConfig.uri)
-        case Disconnected(_) => onDisconnect
+        case Disconnected(_) => onDisconnect()
         case JsonMessage(jval) =>
           logger.debug("Received JSON message {}", jval)
           onMessage(jval)

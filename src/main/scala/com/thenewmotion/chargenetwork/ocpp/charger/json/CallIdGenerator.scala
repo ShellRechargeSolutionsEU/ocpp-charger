@@ -20,5 +20,6 @@ class DefaultCallIdGenerator extends CallIdGenerator {
   private val idIterator = Stream.continually(random.nextPrintableChar()).grouped(callIdLength).map(_.mkString)
 
 
-  def next() = idIterator.next()
+  // TODO get rid of synchronized
+  def next() = synchronized { idIterator.next() }
 }
