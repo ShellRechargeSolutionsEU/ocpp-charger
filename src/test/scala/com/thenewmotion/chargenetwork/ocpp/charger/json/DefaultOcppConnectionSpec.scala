@@ -96,6 +96,12 @@ class DefaultOcppConnectionSpec extends SpecificationWithJUnit with Mockito {
       val result = Await.result(futureResponse.failed, FiniteDuration(1, "seconds"))
       result.asInstanceOf[OcppException].ocppError mustEqual expectedError
     }
+
+    "call error handler if an OCPP error comes in for no particular response" in new DefaultOcppConnectionScope {
+      testConnection.onSrpcMessage(ErrorResponseMessage("not-before-seen", PayloadErrorCode.InternalError, "aargh!"))
+
+      there was one(onError).apply(OcppError(PayloadErrorCode.InternalError, "aargh!"))
+    }
   }
 
   private trait DefaultOcppConnectionScope extends Scope {

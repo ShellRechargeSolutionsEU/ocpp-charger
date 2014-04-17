@@ -35,6 +35,7 @@ trait OcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, OUTRES 
   def onOcppError(error: OcppError)
 }
 
+// TODO support the 'details' field of OCPP error messages
 case class OcppError(error: PayloadErrorCode.Value, description: String)
 case class OcppException(ocppError: OcppError) extends Exception(s"${ocppError.error}: ${ocppError.description}")
 
@@ -117,9 +118,7 @@ trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, 
     private def handleIncomingError(err: ErrorResponseMessage) = err match {
       case ErrorResponseMessage(callId, errCode, description, details) =>
         callIdCache.get(callId) match {
-          case None => logger.error("Received OCPP error with unrecognized call ID {}: {} {}",
-            callId, errCode, description)
-            // TODO call onOcppError and test this
+          case None => onOcppError(OcppError(errCode, description))
           case Some(OutstandingRequest(operation, futureResponse)) =>
             futureResponse failure new OcppException(OcppError(errCode, description))
         }
