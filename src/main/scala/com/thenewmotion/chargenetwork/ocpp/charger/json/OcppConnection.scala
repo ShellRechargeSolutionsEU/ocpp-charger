@@ -4,7 +4,7 @@ import com.thenewmotion.ocpp.messages._
 import com.thenewmotion.ocpp.json._
 import v15.Ocpp15J
 import scala.concurrent.{Promise, Future}
-import scala.util.{Success, Failure}
+import scala.util.{Try, Success, Failure}
 import com.typesafe.scalalogging.slf4j.Logging
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -23,7 +23,7 @@ trait OcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, OUTRES 
 
   trait OcppConnection {
     /** Send an outgoing OCPP request */
-    def sendRequest(req: OUTREQ): Future[INRES]
+    def sendRequest[REQ <: OUTREQ, RES <: INRES](req: REQ)(implicit reqRes: ReqRes[REQ, RES]): Future[RES]
 
     /** Handle an incoming SRPC message */
     def onSrpcMessage(msg: TransportMessage)
@@ -51,10 +51,10 @@ trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, 
 
     private val callIdGenerator = CallIdGenerator()
 
-    case class OutstandingRequest(operation: JsonOperation[_ <: OUTREQ, _ <: INRES],
-                                                responsePromise: Promise[INRES])
+    case class OutstandingRequest[REQ <: OUTREQ, RES <: INRES](operation: JsonOperation[REQ, RES],
+                                            responsePromise: Promise[RES])
 
-    private val callIdCache: mutable.Map[String, OutstandingRequest] = mutable.Map()
+    private val callIdCache: mutable.Map[String, OutstandingRequest[_, _]] = mutable.Map()
 
     def onSrpcMessage(msg: TransportMessage) {
       logger.debug("Incoming SRPC message: {}", msg)
@@ -124,18 +124,19 @@ trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, 
         }
     }
 
-    def sendRequest(req: OUTREQ): Future[INRES] = {
+    def sendRequest[REQ <: OUTREQ, RES <: INRES](req: REQ)(implicit reqRes: ReqRes[REQ, RES]): Future[RES] = {
       val callId = callIdGenerator.next()
-      val operationName = getProcedureName(req)
-      val responsePromise = Promise[INRES]()
+      val responsePromise = Promise[RES]()
 
-      theirOperations.jsonOpForActionName(operationName) match {
-        case theirOperations.Supported(operation) =>
-          callIdCache.put(callId, OutstandingRequest(operation, responsePromise))
+      Try(theirOperations.jsonOpForReqRes(reqRes)) match {
+        case Success(operation) =>
+          callIdCache.put(callId, OutstandingRequest[REQ, RES](operation, responsePromise))
           // TODO have a way to not hardcode the OCPP version number when (de)serializing OCPP
           srpcConnection.send (RequestMessage (callId, getProcedureName (req), Ocpp15J.serialize (req) ) )
           responsePromise.future
-        case _ => throw new Exception(s"Tried to send unsupported OCPP request $operationName")
+        case Failure(e: NoSuchElementException) =>
+          val operationName = getProcedureName(req)
+          throw new Exception(s"Tried to send unsupported OCPP request $operationName")
       }
     }
 

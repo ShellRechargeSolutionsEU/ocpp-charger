@@ -2,14 +2,20 @@ package com.thenewmotion.chargenetwork.ocpp.charger.json
 
 import com.thenewmotion.ocpp.messages._
 import com.thenewmotion.ocpp.messages.centralsystem.CentralSystemAction
+import com.thenewmotion.ocpp.messages.centralsystem.CentralSystemReqRes._
 import com.thenewmotion.ocpp.messages.chargepoint.ChargePointAction
+import com.thenewmotion.ocpp.messages.chargepoint.ChargePointReqRes._
 import scalax.RichEnum
 import scala.reflect._
 import com.thenewmotion.ocpp.json.JsonDeserializable
 import com.thenewmotion.ocpp.json.JsonDeserializable._
 import org.json4s._
 
-class JsonOperation[REQ <: Req : JsonDeserializable : ClassTag, RES <: Res : JsonDeserializable](val action: Enumeration#Value) {
+class JsonOperation[REQ <: Req, RES <: Res](val action: Enumeration#Value)
+                                           (implicit reqRes: ReqRes[REQ, RES],
+                                            reqDeserializable: JsonDeserializable[REQ],
+                                            reqTag: ClassTag[REQ],
+                                            resDeserializable: JsonDeserializable[RES]) {
   def deserializeReq(jval: JValue): REQ = jsonDeserializable[REQ].deserializeV15(jval)
 
   def deserializeRes(jval: JValue): RES = jsonDeserializable[RES].deserializeV15(jval)
@@ -29,6 +35,7 @@ trait JsonOperations[REQ <: Req, RES <: Res] {
 
   def operations: Traversable[JsonOperation[_ <: REQ, _ <: RES]]
 
+  // TODO: still needed?
   def actionForRequestObject(req: REQ): Option[Enumeration#Value] =
     operations.find(_.matchesRequest(req)).map(_.action)
 
@@ -44,6 +51,8 @@ trait JsonOperations[REQ <: Req, RES <: Res] {
       case None         => NotImplemented
     }
   }
+
+  def jsonOpForReqRes[Req <: REQ, Res <: RES](reqRes: ReqRes[Req, Res]): JsonOperation[Req, Res]
 }
 
 
@@ -53,17 +62,39 @@ object CentralSystemOperations extends JsonOperations[CentralSystemReq, CentralS
 
   val enum = CentralSystemAction
 
-  val operations: Traversable[JsonOperation[_ <: CentralSystemReq, _ <: CentralSystemRes]] = List(
-    new JsonOperation[AuthorizeReq, AuthorizeRes](Authorize),
-    new JsonOperation[BootNotificationReq, BootNotificationRes](BootNotification),
-    new JsonOperation[DiagnosticsStatusNotificationReq, DiagnosticsStatusNotificationRes.type](DiagnosticsStatusNotification),
-    new JsonOperation[FirmwareStatusNotificationReq, FirmwareStatusNotificationRes.type](FirmwareStatusNotification),
-    new JsonOperation[HeartbeatReq.type, HeartbeatRes](Heartbeat),
-    new JsonOperation[MeterValuesReq, MeterValuesRes.type](MeterValues),
-    new JsonOperation[StartTransactionReq, StartTransactionRes](StartTransaction),
-    new JsonOperation[StatusNotificationReq, StatusNotificationRes.type](StatusNotification),
-    new JsonOperation[StopTransactionReq, StopTransactionRes](StopTransaction))
+  val authorizeJsonOp = new JsonOperation[AuthorizeReq, AuthorizeRes](Authorize)
+  val bootNotificationJsonOp = new JsonOperation[BootNotificationReq, BootNotificationRes](BootNotification)
+  val diagnosticsStatusNotificationJsonOp = new JsonOperation[DiagnosticsStatusNotificationReq, DiagnosticsStatusNotificationRes.type](DiagnosticsStatusNotification)
+  val firmwareStatusNotificationJsonOp = new JsonOperation[FirmwareStatusNotificationReq, FirmwareStatusNotificationRes.type](FirmwareStatusNotification)
+  val heartbeatJsonOp = new JsonOperation[HeartbeatReq.type, HeartbeatRes](Heartbeat)
+  val meterValuesJsonOp = new JsonOperation[MeterValuesReq, MeterValuesRes.type](MeterValues)
+  val startTransactionJsonOp = new JsonOperation[StartTransactionReq, StartTransactionRes](StartTransaction)
+  val statusNotificationJsonOp = new JsonOperation[StatusNotificationReq, StatusNotificationRes.type](StatusNotification)
+  val stopTransactionJsonOp = new JsonOperation[StopTransactionReq, StopTransactionRes](StopTransaction)
 
+  val operations: Traversable[JsonOperation[_ <: CentralSystemReq, _ <: CentralSystemRes]] = List(
+    authorizeJsonOp,
+    bootNotificationJsonOp,
+    firmwareStatusNotificationJsonOp,
+    heartbeatJsonOp,
+    meterValuesJsonOp,
+    startTransactionJsonOp,
+    statusNotificationJsonOp,
+    stopTransactionJsonOp
+  )
+
+  def jsonOpForReqRes[Req <: CentralSystemReq, Res <: CentralSystemRes](reqRes: ReqRes[Req, Res]): JsonOperation[Req, Res] =
+    reqRes match {
+      case AuthorizeReqRes => authorizeJsonOp
+      case BootNotificationReqRes => bootNotificationJsonOp
+      case FirmwareStatusNotificationReqRes => firmwareStatusNotificationJsonOp
+      case HeartbeatReqRes => heartbeatJsonOp
+      case MeterValuesReqRes => meterValuesJsonOp
+      case StartTransactionReqRes => startTransactionJsonOp
+      case StatusNotificationReqRes => statusNotificationJsonOp
+      case StopTransactionReqRes => stopTransactionJsonOp
+      case _ => throw new NoSuchElementException(s"Not a central system ReqRes: $reqRes")
+    }
 }
 
 object ChargePointOperations extends JsonOperations[ChargePointReq, ChargePointRes] {
@@ -71,22 +102,55 @@ object ChargePointOperations extends JsonOperations[ChargePointReq, ChargePointR
 
   val enum = ChargePointAction
 
+  val cancelReservationJsonOp = new JsonOperation[CancelReservationReq, CancelReservationRes](CancelReservation)
+  val changeAvailabilityJsonOp = new JsonOperation[ChangeAvailabilityReq, ChangeAvailabilityRes](ChangeAvailability)
+  val changeConfigurationJsonOp = new JsonOperation[ChangeConfigurationReq, ChangeConfigurationRes](ChangeConfiguration)
+  val clearCacheJsonOp = new JsonOperation[ClearCacheReq.type, ClearCacheRes](ClearCache)
+  val getConfigurationJsonOp = new JsonOperation[GetConfigurationReq, GetConfigurationRes](GetConfiguration)
+  val getDiagnosticsJsonOp = new JsonOperation[GetDiagnosticsReq, GetDiagnosticsRes](GetDiagnostics)
+  val getLocalListVersionJsonOp = new JsonOperation[GetLocalListVersionReq.type, GetLocalListVersionRes](GetLocalListVersion)
+  val remoteStartTransactionJsonOp = new JsonOperation[RemoteStartTransactionReq, RemoteStartTransactionRes](RemoteStartTransaction)
+  val remoteStopTransactionJsonOp = new JsonOperation[RemoteStopTransactionReq, RemoteStopTransactionRes](RemoteStopTransaction)
+  val reserveNowJsonOp = new JsonOperation[ReserveNowReq, ReserveNowRes](ReserveNow)
+  val resetJsonOp = new JsonOperation[ResetReq, ResetRes](Reset)
+  val sendLocalListJsonOp = new JsonOperation[SendLocalListReq, SendLocalListRes](SendLocalList)
+  val unlockConnectorJsonOp = new JsonOperation[UnlockConnectorReq, UnlockConnectorRes](UnlockConnector)
+  val updateFirmwareJsonOp = new JsonOperation[UpdateFirmwareReq, UpdateFirmwareRes.type](UpdateFirmware)
+  
   val operations: Traversable[JsonOperation[_ <: ChargePointReq, _ <: ChargePointRes]] = List(
-    new JsonOperation[CancelReservationReq, CancelReservationRes](CancelReservation),
-    new JsonOperation[ChangeAvailabilityReq, ChangeAvailabilityRes](ChangeAvailability),
-    new JsonOperation[ChangeConfigurationReq, ChangeConfigurationRes](ChangeConfiguration),
-    new JsonOperation[ClearCacheReq.type, ClearCacheRes](ClearCache),
-    new JsonOperation[GetConfigurationReq, GetConfigurationRes](GetConfiguration),
-    new JsonOperation[GetDiagnosticsReq, GetDiagnosticsRes](GetDiagnostics),
-    new JsonOperation[GetLocalListVersionReq.type, GetLocalListVersionRes](GetLocalListVersion),
-    new JsonOperation[RemoteStartTransactionReq, RemoteStartTransactionRes](RemoteStartTransaction),
-    new JsonOperation[RemoteStopTransactionReq, RemoteStopTransactionRes](RemoteStopTransaction),
-    new JsonOperation[ReserveNowReq, ReserveNowRes](ReserveNow),
-    new JsonOperation[ResetReq, ResetRes](Reset),
-    new JsonOperation[SendLocalListReq, SendLocalListRes](SendLocalList),
-    new JsonOperation[UnlockConnectorReq, UnlockConnectorRes](UnlockConnector),
-    new JsonOperation[UpdateFirmwareReq, UpdateFirmwareRes.type](UpdateFirmware))
+    cancelReservationJsonOp,
+    changeAvailabilityJsonOp,
+    changeConfigurationJsonOp,
+    clearCacheJsonOp,
+    getConfigurationJsonOp,
+    getDiagnosticsJsonOp,
+    getLocalListVersionJsonOp,
+    remoteStartTransactionJsonOp,
+    remoteStopTransactionJsonOp,
+    reserveNowJsonOp,
+    resetJsonOp,
+    sendLocalListJsonOp,
+    unlockConnectorJsonOp,
+    updateFirmwareJsonOp)
 
+  def jsonOpForReqRes[Req <: ChargePointReq, Res <: ChargePointRes](reqRes: ReqRes[Req, Res]): JsonOperation[Req, Res] =
+    reqRes match {
+      case CancelReservationReqRes => cancelReservationJsonOp
+      case ChangeAvailabilityReqRes => changeAvailabilityJsonOp
+      case ChangeConfigurationReqRes => changeConfigurationJsonOp
+      case ClearCacheReqRes => clearCacheJsonOp
+      case GetConfigurationReqRes => getConfigurationJsonOp
+      case GetDiagnosticsReqRes => getDiagnosticsJsonOp
+      case GetLocalListVersionReqRes => getLocalListVersionJsonOp
+      case RemoteStartTransactionReqRes => remoteStartTransactionJsonOp
+      case RemoteStopTransactionReqRes => remoteStopTransactionJsonOp
+      case ReserveNowReqRes => reserveNowJsonOp
+      case ResetReqRes => resetJsonOp
+      case SendLocalListReqRes => sendLocalListJsonOp
+      case UnlockConnectorReqRes => unlockConnectorJsonOp
+      case UpdateFirmwareReqRes => updateFirmwareJsonOp
+      case _ => throw new NoSuchElementException(s"Not a charge point ReqRes: $reqRes")
+    }
 }
 
 

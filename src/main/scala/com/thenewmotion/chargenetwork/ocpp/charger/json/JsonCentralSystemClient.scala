@@ -2,6 +2,7 @@ package com.thenewmotion.chargenetwork.ocpp.charger
 package json
 
 import com.thenewmotion.ocpp.messages.centralsystem.CentralSystem
+import com.thenewmotion.ocpp.messages.centralsystem.CentralSystemReqRes._
 import com.typesafe.scalalogging.slf4j.Logging
 import java.net.URI
 import com.thenewmotion.ocpp.messages._
@@ -24,25 +25,27 @@ class JsonCentralSystemClient(chargerId: String, centralSystemUri: URI) extends 
     def onDisconnect = logger.error("WebSocket disconnected for charger {}" , chargerId)
   }
 
-  def syncSend(req: CentralSystemReq) = Await.result(client.send(req), 45.seconds)
+  def syncSend[REQ <: CentralSystemReq, RES <: CentralSystemRes](req: REQ)
+                                                                (implicit reqRes: ReqRes[REQ, RES]): RES =
+    Await.result(client.send(req), 45.seconds)
 
-  def authorize(req: AuthorizeReq): AuthorizeRes = syncSend(req).asInstanceOf[AuthorizeRes]
+  def authorize(req: AuthorizeReq): AuthorizeRes = syncSend[AuthorizeReq, AuthorizeRes](req)
 
-  def bootNotification(req: BootNotificationReq): BootNotificationRes = syncSend(req).asInstanceOf[BootNotificationRes]
+  def bootNotification(req: BootNotificationReq): BootNotificationRes = syncSend(req)
 
-  def dataTransfer(req: DataTransferReq): DataTransferRes = syncSend(req).asInstanceOf[DataTransferRes]
+  def dataTransfer(req: DataTransferReq): DataTransferRes = syncSend(req)
 
   def diagnosticsStatusNotification(req: DiagnosticsStatusNotificationReq) = syncSend(req)
 
   def firmwareStatusNotification(req: FirmwareStatusNotificationReq) = syncSend(req)
 
-  def heartbeat: HeartbeatRes = syncSend(HeartbeatReq).asInstanceOf[HeartbeatRes]
+  def heartbeat: HeartbeatRes = syncSend(HeartbeatReq)
 
   def meterValues(req: MeterValuesReq) = syncSend(req)
 
-  def startTransaction(req: StartTransactionReq): StartTransactionRes = syncSend(req).asInstanceOf[StartTransactionRes]
+  def startTransaction(req: StartTransactionReq): StartTransactionRes = syncSend(req)
 
   def statusNotification(req: StatusNotificationReq) = syncSend(req)
 
-  def stopTransaction(req: StopTransactionReq): StopTransactionRes = syncSend(req).asInstanceOf[StopTransactionRes]
+  def stopTransaction(req: StopTransactionReq): StopTransactionRes = syncSend(req)
 }

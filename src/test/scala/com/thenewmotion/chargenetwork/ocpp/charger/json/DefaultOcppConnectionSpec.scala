@@ -12,6 +12,7 @@ import com.thenewmotion.ocpp.json._
 import com.thenewmotion.ocpp.messages.RemoteStopTransactionRes
 import com.thenewmotion.ocpp.json.RequestMessage
 import com.thenewmotion.ocpp.json.ResponseMessage
+import com.thenewmotion.ocpp.messages.centralsystem.CentralSystemReqRes._
 
 class DefaultOcppConnectionSpec extends SpecificationWithJUnit with Mockito {
 

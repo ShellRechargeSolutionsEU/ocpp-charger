@@ -56,7 +56,8 @@ class ChargePointService(chargerId: String, actor: ActorRef) extends ChargePoint
 
   def cancelReservation(req: CancelReservationReq) = CancelReservationRes(accepted = false)
 
-  override def apply[REQ <: ChargePointReq, RES <:ChargePointRes](req: REQ)(implicit reqRes: ReqRes[REQ, RES]) = {
+  override def apply[REQ <: ChargePointReq, RES <:ChargePointRes](req: REQ)
+                                                                 (implicit reqRes: ChargePointReqRes[REQ, RES]) = {
     implicit val timeout = Timeout(500 millis)
     val future = actor ? req
     val res = try Await.result(future, timeout.duration).asInstanceOf[RES] catch {
