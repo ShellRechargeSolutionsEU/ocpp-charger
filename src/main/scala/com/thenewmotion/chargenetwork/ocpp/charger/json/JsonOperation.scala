@@ -52,6 +52,15 @@ trait JsonOperations[REQ <: Req, RES <: Res] {
     }
   }
 
+  /**
+   * @param reqRes A ReqRes object for a certain OCPP operation
+   *
+   * @tparam Req The request type for this OCPP operation
+   * @tparam Res The response type for this OCPP operation
+   *
+   * @return The JsonOperation instance for the OCPP operation of the given ReqRes object
+   * @throws NoSuchElementException If the OCPP operation for the given ReqRes is not supported with OCPP-JSON
+   */
   def jsonOpForReqRes[Req <: REQ, Res <: RES](reqRes: ReqRes[Req, Res]): JsonOperation[Req, Res]
 }
 

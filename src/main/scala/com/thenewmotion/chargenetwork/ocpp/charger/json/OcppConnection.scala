@@ -125,19 +125,23 @@ trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, 
     }
 
     def sendRequest[REQ <: OUTREQ, RES <: INRES](req: REQ)(implicit reqRes: ReqRes[REQ, RES]): Future[RES] = {
-      val callId = callIdGenerator.next()
-      val responsePromise = Promise[RES]()
-
       Try(theirOperations.jsonOpForReqRes(reqRes)) match {
-        case Success(operation) =>
-          callIdCache.put(callId, OutstandingRequest[REQ, RES](operation, responsePromise))
-          // TODO have a way to not hardcode the OCPP version number when (de)serializing OCPP
-          srpcConnection.send (RequestMessage (callId, getProcedureName (req), Ocpp15J.serialize (req) ) )
-          responsePromise.future
+        case Success(operation) => sendRequestWithJsonOperation[REQ, RES](req, operation)
         case Failure(e: NoSuchElementException) =>
           val operationName = getProcedureName(req)
           throw new Exception(s"Tried to send unsupported OCPP request $operationName")
       }
+    }
+
+    private def sendRequestWithJsonOperation[REQ <: OUTREQ, RES <: INRES](req: REQ,
+                                                                          jsonOperation: JsonOperation[REQ, RES]) = {
+      val callId = callIdGenerator.next()
+      val responsePromise = Promise[RES]()
+
+      callIdCache.put(callId, OutstandingRequest[REQ, RES](jsonOperation, responsePromise))
+      // TODO have a way to not hardcode the OCPP version number when (de)serializing OCPP
+      srpcConnection.send(RequestMessage(callId, getProcedureName(req), Ocpp15J.serialize(req)))
+      responsePromise.future
     }
 
     private def getProcedureName(c: Message) = {
