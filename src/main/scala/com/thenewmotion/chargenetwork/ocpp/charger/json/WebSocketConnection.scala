@@ -2,10 +2,7 @@ package com.thenewmotion.chargenetwork.ocpp.charger.json
 
 import org.json4s._
 import org.json4s.native.Serialization
-import org.json4s.native.JsonParser
 import com.typesafe.scalalogging.slf4j.Logging
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
 import java.net.URI
 import io.backchat.hookup._
 import io.backchat.hookup.HookupClient.Receive
@@ -46,21 +43,22 @@ trait WebSocketComponent {
   def onDisconnect(): Unit = {}
 }
 
-trait DummyWebSocketComponent extends WebSocketComponent {
+class DummyWebSocketComponent extends WebSocketComponent with Logging {
 
-  class MockWebSocketConnection extends WebSocketConnection with Logging {
+  class MockWebSocketConnection extends WebSocketConnection {
     def send(msg: JValue) = {
       val string = Serialization.write(msg)(DefaultFormats)
       logger.info(s"Sending $string")
     }
 
     def close() = {}
-
-    private val testGetConfigurationReq = JsonParser.parse( """[2, "test-call-id", "GetConfiguration", { "key": [ "KVCBX_PROFILE" ] }]""")
-    private val testReserveNowReq: JValue = JsonParser.parse( """[2, "test-call-id-2", "ReserveNow", { "connectorId": 0, "expiryDate": "2013-02-01T15:09:18Z", "idTag": "044943121F1D80", "parentIdTag": "", "reservationId": 0 }]""")
-    WebSocketClientApp.system.scheduler.scheduleOnce(FiniteDuration(500, "milliseconds"))(onMessage(testGetConfigurationReq))
-    WebSocketClientApp.system.scheduler.scheduleOnce(FiniteDuration(1, "second"))(onMessage(testReserveNowReq))
   }
+
+  def webSocketConnection = new MockWebSocketConnection
+
+  def onError(e: Throwable) = logger.info(s"DummyWebSocketComponent received error {}", e)
+
+  def onMessage(jval: JValue) = logger.info("DummyWebSocketComponent received message {}", jval)
 }
 
 trait HookupClientWebSocketComponent extends WebSocketComponent {
