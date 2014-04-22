@@ -6,7 +6,6 @@ import akka.io.IO
 import akka.pattern.{ask, pipe}
 import akka.util.Timeout
 import com.thenewmotion.ocpp.messages._
-import chargepoint._
 import com.thenewmotion.ocpp.spray.{ChargerInfo, OcppProcessing}
 import com.typesafe.scalalogging.slf4j.Logging
 import _root_.spray.can.Http

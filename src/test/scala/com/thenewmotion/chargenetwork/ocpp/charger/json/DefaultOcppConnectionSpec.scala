@@ -12,14 +12,13 @@ import com.thenewmotion.ocpp.json._
 import com.thenewmotion.ocpp.messages.RemoteStopTransactionRes
 import com.thenewmotion.ocpp.json.RequestMessage
 import com.thenewmotion.ocpp.json.ResponseMessage
-import com.thenewmotion.ocpp.messages.centralsystem.CentralSystemReqRes._
 
 class DefaultOcppConnectionSpec extends SpecificationWithJUnit with Mockito {
 
   "DefaultOcppConnection" should {
 
     "respond to requests with a response message" in new DefaultOcppConnectionScope {
-      onRequest.apply(any) returns RemoteStopTransactionRes(true)
+      onRequest.apply(any) returns RemoteStopTransactionRes(accepted = true)
 
       testConnection.onSrpcMessage(srpcRemoteStopTransactionReq)
 
@@ -27,7 +26,7 @@ class DefaultOcppConnectionSpec extends SpecificationWithJUnit with Mockito {
     }
 
     "respond to requests with the same call ID" in new DefaultOcppConnectionScope {
-      onRequest.apply(any) returns RemoteStopTransactionRes(true)
+      onRequest.apply(any) returns RemoteStopTransactionRes(accepted = true)
 
       testConnection.onSrpcMessage(srpcRemoteStopTransactionReq)
 

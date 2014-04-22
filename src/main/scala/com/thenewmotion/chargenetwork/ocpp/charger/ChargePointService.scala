@@ -2,7 +2,6 @@ package com.thenewmotion.chargenetwork.ocpp.charger
 
 import com.typesafe.scalalogging.slf4j.Logging
 import com.thenewmotion.ocpp.messages._
-import chargepoint._
 import akka.actor.{Actor, Props, ActorRef}
 import akka.util.Timeout
 import akka.pattern.ask
@@ -50,7 +49,7 @@ class ChargePointService(chargerId: String, actor: ActorRef) extends ChargePoint
 
   def getLocalListVersion = GetLocalListVersionRes(AuthListNotSupported)
 
-  def dataTransfer(req: DataTransferReq) = DataTransferRes(DataTransferStatus.UnknownVendorId)
+  def dataTransfer(req: ChargePointDataTransferReq) = ChargePointDataTransferRes(DataTransferStatus.UnknownVendorId)
 
   def reserveNow(req: ReserveNowReq) = ReserveNowRes(Reservation.Rejected)
 

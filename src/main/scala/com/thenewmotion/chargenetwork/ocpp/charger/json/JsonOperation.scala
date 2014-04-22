@@ -1,10 +1,6 @@
 package com.thenewmotion.chargenetwork.ocpp.charger.json
 
 import com.thenewmotion.ocpp.messages._
-import com.thenewmotion.ocpp.messages.centralsystem.CentralSystemAction
-import com.thenewmotion.ocpp.messages.centralsystem.CentralSystemReqRes._
-import com.thenewmotion.ocpp.messages.chargepoint.ChargePointAction
-import com.thenewmotion.ocpp.messages.chargepoint.ChargePointReqRes._
 import scalax.RichEnum
 import scala.reflect._
 import com.thenewmotion.ocpp.json.JsonDeserializable
@@ -92,7 +88,8 @@ object CentralSystemOperations extends JsonOperations[CentralSystemReq, CentralS
     stopTransactionJsonOp
   )
 
-  def jsonOpForReqRes[Req <: CentralSystemReq, Res <: CentralSystemRes](reqRes: ReqRes[Req, Res]): JsonOperation[Req, Res] =
+  def jsonOpForReqRes[Req <: CentralSystemReq, Res <: CentralSystemRes](reqRes: ReqRes[Req, Res]): JsonOperation[Req, Res] = {
+    import ReqRes._
     reqRes match {
       case AuthorizeReqRes => authorizeJsonOp
       case BootNotificationReqRes => bootNotificationJsonOp
@@ -104,6 +101,7 @@ object CentralSystemOperations extends JsonOperations[CentralSystemReq, CentralS
       case StopTransactionReqRes => stopTransactionJsonOp
       case _ => throw new NoSuchElementException(s"Not a central system ReqRes: $reqRes")
     }
+  }
 }
 
 object ChargePointOperations extends JsonOperations[ChargePointReq, ChargePointRes] {
@@ -142,7 +140,9 @@ object ChargePointOperations extends JsonOperations[ChargePointReq, ChargePointR
     unlockConnectorJsonOp,
     updateFirmwareJsonOp)
 
-  def jsonOpForReqRes[Req <: ChargePointReq, Res <: ChargePointRes](reqRes: ReqRes[Req, Res]): JsonOperation[Req, Res] =
+  def jsonOpForReqRes[Req <: ChargePointReq, Res <: ChargePointRes](reqRes: ReqRes[Req, Res]): JsonOperation[Req, Res] = {
+    import ReqRes._
+
     reqRes match {
       case CancelReservationReqRes => cancelReservationJsonOp
       case ChangeAvailabilityReqRes => changeAvailabilityJsonOp
@@ -160,6 +160,7 @@ object ChargePointOperations extends JsonOperations[ChargePointReq, ChargePointR
       case UpdateFirmwareReqRes => updateFirmwareJsonOp
       case _ => throw new NoSuchElementException(s"Not a charge point ReqRes: $reqRes")
     }
+  }
 }
 
 

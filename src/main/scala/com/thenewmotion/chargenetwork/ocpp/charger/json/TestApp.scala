@@ -3,7 +3,6 @@ package com.thenewmotion.chargenetwork.ocpp.charger.json
 import java.net.URI
 import com.typesafe.scalalogging.slf4j.Logging
 import com.thenewmotion.ocpp.messages._
-import com.thenewmotion.ocpp.messages.centralsystem.CentralSystemReqRes._
 import scala.concurrent._
 import com.thenewmotion.ocpp.messages.GetConfigurationReq
 import scala.concurrent.ExecutionContext.Implicits.global

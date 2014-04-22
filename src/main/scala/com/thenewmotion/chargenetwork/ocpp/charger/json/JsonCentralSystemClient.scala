@@ -1,8 +1,6 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 package json
 
-import com.thenewmotion.ocpp.messages.centralsystem.CentralSystem
-import com.thenewmotion.ocpp.messages.centralsystem.CentralSystemReqRes._
 import com.typesafe.scalalogging.slf4j.Logging
 import java.net.URI
 import com.thenewmotion.ocpp.messages._
@@ -33,7 +31,7 @@ class JsonCentralSystemClient(chargerId: String, centralSystemUri: URI) extends 
 
   def bootNotification(req: BootNotificationReq): BootNotificationRes = syncSend(req)
 
-  def dataTransfer(req: DataTransferReq): DataTransferRes = syncSend(req)
+  def dataTransfer(req: CentralSystemDataTransferReq): CentralSystemDataTransferRes = syncSend(req)
 
   def diagnosticsStatusNotification(req: DiagnosticsStatusNotificationReq) = syncSend(req)
 
