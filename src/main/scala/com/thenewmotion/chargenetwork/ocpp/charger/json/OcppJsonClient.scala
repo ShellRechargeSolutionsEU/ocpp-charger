@@ -2,11 +2,8 @@ package com.thenewmotion.chargenetwork.ocpp.charger.json
 
 import java.net.URI
 import com.thenewmotion.ocpp.messages._
-import io.backchat.hookup.HookupClientConfig
 import scala.concurrent.Future
-import com.thenewmotion.ocpp.messages.centralsystem.CentralSystemReqRes
 import io.backchat.hookup.HookupClientConfig
-import com.thenewmotion.chargenetwork.ocpp.charger.json.OcppError
 
 // TODO:
 // * foutafhandeling in send voor niet-bekende ops
