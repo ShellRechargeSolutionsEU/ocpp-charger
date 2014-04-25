@@ -38,6 +38,10 @@ trait OcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, OUTRES 
 // TODO support the 'details' field of OCPP error messages
 case class OcppError(error: PayloadErrorCode.Value, description: String)
 case class OcppException(ocppError: OcppError) extends Exception(s"${ocppError.error}: ${ocppError.description}")
+object OcppException {
+  def apply(error: PayloadErrorCode.Value, description: String): OcppException =
+    OcppException(new OcppError(error, description))
+}
 
 trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, OUTRES <: Res]
   extends OcppConnectionComponent[OUTREQ, INRES, INREQ, OUTRES] {
@@ -51,8 +55,8 @@ trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, 
 
     private val callIdGenerator = CallIdGenerator()
 
-    case class OutstandingRequest[REQ <: OUTREQ, RES <: INRES](operation: JsonOperation[REQ, RES],
-                                            responsePromise: Promise[RES])
+    sealed case class OutstandingRequest[REQ <: OUTREQ, RES <: INRES](operation: JsonOperation[REQ, RES],
+                                                                      responsePromise: Promise[RES])
 
     private val callIdCache: mutable.Map[String, OutstandingRequest[_, _]] = mutable.Map()
 
@@ -130,6 +134,7 @@ trait DefaultOcppConnectionComponent[OUTREQ <: Req, INRES <: Res, INREQ <: Req, 
         case Failure(e: NoSuchElementException) =>
           val operationName = getProcedureName(req)
           throw new Exception(s"Tried to send unsupported OCPP request $operationName")
+        case Failure(e) => throw e
       }
     }
 

@@ -9,7 +9,7 @@ import scala.concurrent.{Future, Await}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 
-@deprecated("Use OcppJsonClient directly instead")
+@deprecated("Use OcppJsonClient directly instead", since="2.0")
 class JsonCentralSystemClient(chargerId: String, centralSystemUri: URI) extends CentralSystem with Logging {
 
   val client = new OcppJsonClient(chargerId, centralSystemUri) {
