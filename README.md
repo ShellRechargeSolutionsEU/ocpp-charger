@@ -3,6 +3,12 @@
 Actor based representation of ocpp chargers.
 Can be run standalone against Central System as ordinary charger.
 
+It now also supports OCPP-J (OCPP over WebSocket with JSON) but it does not
+support receiving incoming requests this way, and does a blocking wait on the
+responses from the central system. This happens because we implemented the
+OCPP-SOAP API on top of the JSON API. If the package were refactored to use the
+JSON API natively it could be more functional and performant.
+
 
 ## Setup
 
