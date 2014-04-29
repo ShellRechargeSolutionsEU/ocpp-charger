@@ -23,8 +23,11 @@ class JsonCentralSystemClient(chargerId: String, centralSystemUri: URI) extends 
   }
 
   def syncSend[REQ <: CentralSystemReq, RES <: CentralSystemRes](req: REQ)
-                                                                (implicit reqRes: ReqRes[REQ, RES]): RES =
-    Await.result(client.send(req), 45.seconds)
+                                                                (implicit reqRes: ReqRes[REQ, RES]): RES = {
+    val res = Await.result(client.send(req), 45.seconds)
+    logger.info("{}\n\t>> {}\n\t<< {}", chargerId, req, res)
+    res
+  }
 
   def authorize(req: AuthorizeReq): AuthorizeRes = syncSend[AuthorizeReq, AuthorizeRes](req)
 
