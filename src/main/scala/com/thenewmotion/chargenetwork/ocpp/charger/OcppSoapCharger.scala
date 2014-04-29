@@ -5,7 +5,6 @@ import dispatch.Http
 import akka.actor.{ActorRef, Props}
 import com.thenewmotion.ocpp.soap.CentralSystemClient
 import com.thenewmotion.ocpp.Version
-import json.JsonCentralSystemClient
 import com.thenewmotion.ocpp.messages.CentralSystem
 
 trait OcppCharger {
