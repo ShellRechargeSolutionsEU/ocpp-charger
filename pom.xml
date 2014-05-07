@@ -115,11 +115,6 @@
           <version>3.3</version>
         </dependency>
         <dependency>
-            <groupId>io.backchat.hookup</groupId>
-            <artifactId>hookup_${scala.version}</artifactId>
-            <version>0.2.3</version>
-        </dependency>
-        <dependency>
             <groupId>org.json4s</groupId>
             <artifactId>json4s-native_${scala.version}</artifactId>
             <version>${json4s.version}</version>
