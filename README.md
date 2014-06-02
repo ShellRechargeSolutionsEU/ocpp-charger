@@ -29,3 +29,8 @@ JSON API natively it could be more functional and performant.
             <version>1.0-SNAPSHOT</version>
     </dependency>
 ```
+
+## Start the charger
+
+1. First compile with `mvn compile`
+2. Then start the charger with `mvn exec:java -Dexec.mainClass="com.thenewmotion.chargenetwork.ocpp.charger.ChargerApp"`

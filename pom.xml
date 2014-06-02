@@ -17,7 +17,7 @@
     <properties>
         <akka.version>2.2.3</akka.version>
         <spray.version>1.2.0</spray.version>
-        <ocpp.version>4.0-SNAPSHOT</ocpp.version>
+        <ocpp.version>4.0</ocpp.version>
         <json4s.version>3.2.4</json4s.version>
     </properties>
 

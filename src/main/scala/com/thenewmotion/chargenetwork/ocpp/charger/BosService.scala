@@ -3,6 +3,7 @@ package com.thenewmotion.chargenetwork.ocpp.charger
 import com.thenewmotion.ocpp.messages._
 import com.thenewmotion.time.Imports._
 import scala.concurrent.duration.FiniteDuration
+import scala.util.Random
 
 /**
  * @author Yaroslav Klymko
@@ -61,7 +62,7 @@ class BosServiceImpl(val chargerId: String, protected val service: CentralSystem
   }
 
   def available() {
-    notification(Available)
+    notification(Available())
   }
 
   def heartbeat() {
@@ -73,12 +74,18 @@ class BosServiceImpl(val chargerId: String, protected val service: CentralSystem
 
 class ConnectorServiceImpl(protected val service: CentralSystem, connectorId: Int) extends ConnectorService with Common {
 
+  private val random = new Random()
+
   def occupied() {
-    notification(Occupied, Some(connectorId))
+    random.nextBoolean() match {
+      case true => notification(Occupied(Some("Charging")), Some(connectorId))
+      case false => notification(Occupied(None), Some(connectorId))
+    }
+
   }
 
   def available() {
-    notification(Available, Some(connectorId))
+    notification(Available(), Some(connectorId))
   }
 
   def authorize(card: String) = service(AuthorizeReq(card)).idTag.status == AuthorizationStatus.Accepted
