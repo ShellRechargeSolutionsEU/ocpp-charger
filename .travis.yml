@@ -1,3 +1,5 @@
 language: scala
 scala:
-  - "2.9.2"
+  - "2.10.3"
+notifications:
+  slack: thenewmotion:AXSluctig1mmZbeKRDeeY41s
