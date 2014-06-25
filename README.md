@@ -33,4 +33,12 @@ JSON API natively it could be more functional and performant.
 ## Start the charger
 
 1. First compile with `mvn compile`
-2. Then start the charger with `mvn exec:java -Dexec.mainClass="com.thenewmotion.chargenetwork.ocpp.charger.ChargerApp"`
+2. Then start the charger with `mvn exec:java`
+
+### Options
+
+See the source file src/main/scala/com/thenewmotion/chargenetwork/ocpp/charger/ChargerApp.scala for the different options.
+
+Options can be passed using the a `-Dexec.args="..."` option to Maven, like this:
+
+`mvn exec:java -Dexec.args="--connection-type soap http://localhost:8080/ocpp/"`
