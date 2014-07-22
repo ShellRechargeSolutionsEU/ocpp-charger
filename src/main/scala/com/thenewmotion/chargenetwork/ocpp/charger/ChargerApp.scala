@@ -19,6 +19,7 @@ object ChargerApp {
       val protocolVersion = opt[String]("protocol-version", descr = "OCPP version (either \"1.2\" or \"1.5\"", default = Some("1.5"))
       val connectionType = opt[String]("connection-type", descr = "whether to use WebSocket/JSON or HTTP/SOAP (either  \"json\" or \"soap\")", default = Some("json"))
       val listenPort = opt[Short]("listen", descr = "TCP port to listen on for remote commands", default = Some(8084.toShort))
+      val alfenCharger = opt[Boolean]("alfen", descr = "Alfen charger behaviour: distinguish charging and not charging while occupied", default = Some(false))
       val chargeServerUrl = trailArg[String](descr = "Charge server URL base (without trailing slash)", default = Some("http://127.0.0.1:8081/ocppws"))
     }
 
@@ -36,7 +37,7 @@ object ChargerApp {
 
     val url = new URI(config.chargeServerUrl())
     val charger = if (connectionType == Json) {
-      new OcppJsonCharger(config.chargerId(), config.numberOfConnectors(), url)
+      new OcppJsonCharger(config.chargerId(), config.numberOfConnectors(), url, config.alfenCharger())
     } else {
       val server = new ChargerServer(config.listenPort())
       new OcppSoapCharger(config.chargerId(), config.numberOfConnectors(), version, url, server)

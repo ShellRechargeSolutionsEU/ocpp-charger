@@ -8,7 +8,7 @@ import scala.concurrent.Future
 /**
  * @author Yaroslav Klymko
  */
-class ChargerActor(service: BosService, numberOfConnectors: Int = 1)
+class ChargerActor(service: BosService, numberOfConnectors: Int = 1, alfenCharger:Boolean = false)
   extends Actor
   with LoggingFSM[ChargerActor.State, ChargerActor.Data] {
 
@@ -130,7 +130,7 @@ class ChargerActor(service: BosService, numberOfConnectors: Int = 1)
   initialize()
 
   def startConnector(c: Int) {
-    context.actorOf(Props(new ConnectorActor(service.connector(c))), c.toString)
+    context.actorOf(Props(new ConnectorActor(service.connector(c), alfenCharger)), c.toString)
   }
 
   def connector(c: Int): ActorRef = context.actorFor(c.toString)

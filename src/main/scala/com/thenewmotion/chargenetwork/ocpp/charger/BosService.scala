@@ -19,6 +19,7 @@ trait BosService {
 
 trait ConnectorService {
   def occupied()
+  def occupiedCharging()
   def available()
   def authorize(card: String): Boolean
   def startSession(card: String, meterValue: Int): Int
@@ -76,12 +77,21 @@ class ConnectorServiceImpl(protected val service: CentralSystem, connectorId: In
 
   private val random = new Random()
 
-  def occupied() {
-    random.nextBoolean() match {
-      case true => notification(Occupied(Some("Charging")), Some(connectorId))
-      case false => notification(Occupied(None), Some(connectorId))
-    }
+  /**
+   * OCPP 1.5 doesn't distinguish between charging and not charging
+   * while connected.
+   * At least one vendor of EV chargers communicates the difference
+   * using a separate field "info" which is present and contains the
+   * value "charging" if the car is still charging.
+   *
+   * This case is covered by this method.
+   */
+  def occupiedCharging() {
+    notification(Occupied(Some("Charging")), Some(connectorId))
+  }
 
+  def occupied() {
+    notification(Occupied(None), Some(connectorId))
   }
 
   def available() {

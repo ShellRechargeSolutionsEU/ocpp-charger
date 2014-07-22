@@ -6,7 +6,7 @@ import scala.concurrent.duration._
 /**
  * @author Yaroslav Klymko
  */
-class ConnectorActor(service: ConnectorService)
+class ConnectorActor(service: ConnectorService, alfenCharger:Boolean = false)
   extends Actor
   with LoggingFSM[ConnectorActor.State, ConnectorActor.Data] {
   import ConnectorActor._
@@ -23,6 +23,8 @@ class ConnectorActor(service: ConnectorService)
     case Event(SwipeCard(rfid), _)  =>
       if (service.authorize(rfid)) {
         val sessionId = service.startSession(rfid, initialMeterValue)
+        if (alfenCharger) service.occupiedCharging() else service.occupied()
+        log.debug("Going to 'Charging'")
         goto(Charging) using ChargingData(sessionId, initialMeterValue)
       }
       else stay()
@@ -33,6 +35,7 @@ class ConnectorActor(service: ConnectorService)
 
   when(Charging) {
     case Event(SwipeCard(rfid), ChargingData(transactionId, meterValue)) =>
+      log.debug("Card swiped while charging")
       if (service.authorize(rfid) && service.stopSession(Some(rfid), transactionId, meterValue))
         goto(Connected) using NoData
       else stay()
@@ -41,11 +44,19 @@ class ConnectorActor(service: ConnectorService)
       service.meterValue(transactionId, meterValue)
       stay() using ChargingData(transactionId, meterValue + 1)
     }
+    case Event(FullyCharged, _) =>
+      log.debug("FullyCharged; sending 'occupied'")
+      service.occupied()
+      goto(Connected) using NoData
     case Event(_: Action, _) => stay()
   }
 
   onTransition {
-    case _ -> Charging => { log.debug("Setting timer for meterValue"); setTimer("meterValueTimer", SendMeterValue, 20 seconds, true) }
+    case _ -> Charging => {
+      log.debug("Setting timer for meterValue and fullyCharged")
+      setTimer("fullyCharged", FullyCharged, 1 seconds, false)
+      setTimer("meterValueTimer", SendMeterValue, 20 seconds, true)
+    }
     case Charging -> _ => cancelTimer("meterValueTimer")
   }
 
@@ -66,6 +77,7 @@ object ConnectorActor {
   sealed trait Action
   case object Plug extends Action
   case object Unplug extends Action
+  case object FullyCharged extends Action
   case class SwipeCard(rfid: String) extends Action
   case object Fault
 
