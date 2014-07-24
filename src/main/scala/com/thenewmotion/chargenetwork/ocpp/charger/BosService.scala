@@ -1,5 +1,6 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
+import com.thenewmotion.chargenetwork.ocpp.charger.ConnectorActor.{Another, Alfen, CpProducer}
 import com.thenewmotion.ocpp.messages._
 import com.thenewmotion.time.Imports._
 import scala.concurrent.duration.FiniteDuration
@@ -19,7 +20,7 @@ trait BosService {
 
 trait ConnectorService {
   def occupied()
-  def occupiedCharging()
+  def startCharging()
   def available()
   def authorize(card: String): Boolean
   def startSession(card: String, meterValue: Int): Int
@@ -40,11 +41,11 @@ trait Common {
 }
 
 object BosService {
-  def apply(chargerId: String, service: CentralSystem): BosService =
-    new BosServiceImpl(chargerId, service)
+  def apply(chargerId: String, service: CentralSystem, cpProducer: CpProducer): BosService =
+    new BosServiceImpl(chargerId, service, cpProducer)
 }
 
-class BosServiceImpl(val chargerId: String, protected val service: CentralSystem) extends BosService with Common {
+class BosServiceImpl(val chargerId: String, protected val service: CentralSystem, cpProducer: CpProducer) extends BosService with Common {
 
   def boot(): FiniteDuration = service(BootNotificationReq(
     chargePointVendor = "The New Motion",
@@ -70,10 +71,10 @@ class BosServiceImpl(val chargerId: String, protected val service: CentralSystem
     service.heartbeat
   }
 
-  def connector(idx: Int) = new ConnectorServiceImpl(service, idx)
+  def connector(idx: Int) = new ConnectorServiceImpl(service, idx, cpProducer)
 }
 
-class ConnectorServiceImpl(protected val service: CentralSystem, connectorId: Int) extends ConnectorService with Common {
+class ConnectorServiceImpl(protected val service: CentralSystem, connectorId: Int, cpProducer: CpProducer) extends ConnectorService with Common {
 
   private val random = new Random()
 
@@ -86,8 +87,12 @@ class ConnectorServiceImpl(protected val service: CentralSystem, connectorId: In
    *
    * This case is covered by this method.
    */
-  def occupiedCharging() {
-    notification(Occupied(Some("Charging")), Some(connectorId))
+  def startCharging() {
+    val occupied = cpProducer match {
+      case Alfen => Occupied(Some("Charging"))
+      case Another => Occupied(None)
+    }
+    notification(occupied, Some(connectorId))
   }
 
   def occupied() {

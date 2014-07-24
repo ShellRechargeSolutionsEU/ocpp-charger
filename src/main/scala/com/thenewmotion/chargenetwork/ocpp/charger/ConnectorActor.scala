@@ -6,7 +6,7 @@ import scala.concurrent.duration._
 /**
  * @author Yaroslav Klymko
  */
-class ConnectorActor(service: ConnectorService, alfenCharger:Boolean = false)
+class ConnectorActor(service: ConnectorService)
   extends Actor
   with LoggingFSM[ConnectorActor.State, ConnectorActor.Data] {
   import ConnectorActor._
@@ -23,7 +23,7 @@ class ConnectorActor(service: ConnectorService, alfenCharger:Boolean = false)
     case Event(SwipeCard(rfid), _)  =>
       if (service.authorize(rfid)) {
         val sessionId = service.startSession(rfid, initialMeterValue)
-        if (alfenCharger) service.occupiedCharging() else service.occupied()
+        service.startCharging()
         log.debug("Going to 'Charging'")
         goto(Charging) using ChargingData(sessionId, initialMeterValue)
       }
@@ -86,4 +86,8 @@ object ConnectorActor {
   case class ChargingData(transactionId: Int, meterValue: Int) extends Data
 
   case object SendMeterValue
+
+  sealed trait CpProducer
+  case object Alfen extends CpProducer
+  case object Another extends CpProducer
 }

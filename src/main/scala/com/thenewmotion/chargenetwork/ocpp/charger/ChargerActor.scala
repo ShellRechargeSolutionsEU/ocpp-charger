@@ -130,7 +130,7 @@ class ChargerActor(service: BosService, numberOfConnectors: Int = 1, alfenCharge
   initialize()
 
   def startConnector(c: Int) {
-    context.actorOf(Props(new ConnectorActor(service.connector(c), alfenCharger)), c.toString)
+    context.actorOf(Props(new ConnectorActor(service.connector(c))), c.toString)
   }
 
   def connector(c: Int): ActorRef = context.actorFor(c.toString)
