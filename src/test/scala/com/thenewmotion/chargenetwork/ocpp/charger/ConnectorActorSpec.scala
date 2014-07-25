@@ -23,7 +23,7 @@ class ConnectorActorSpec extends SpecificationWithJUnit with Mockito {
       actor receive SwipeCard(rfid)
 
       actor.stateName mustEqual Charging
-      there was one(service).startCharging()
+      there was one(service).charging()
     }
 
     "send (simply) occupied when battery full in Alfen charger" in new ConnectorActorScope {

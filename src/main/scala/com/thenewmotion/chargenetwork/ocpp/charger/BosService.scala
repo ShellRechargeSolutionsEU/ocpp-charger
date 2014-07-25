@@ -20,7 +20,7 @@ trait BosService {
 
 trait ConnectorService {
   def occupied()
-  def startCharging()
+  def charging()
   def available()
   def authorize(card: String): Boolean
   def startSession(card: String, meterValue: Int): Int
@@ -87,7 +87,7 @@ class ConnectorServiceImpl(protected val service: CentralSystem, connectorId: In
    *
    * This case is covered by this method.
    */
-  def startCharging() {
+  def charging() {
     val occupied = cpProducer match {
       case Alfen => Occupied(Some("Charging"))
       case Another => Occupied(None)

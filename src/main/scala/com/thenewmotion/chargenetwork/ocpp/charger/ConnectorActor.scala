@@ -23,7 +23,7 @@ class ConnectorActor(service: ConnectorService)
     case Event(SwipeCard(rfid), _)  =>
       if (service.authorize(rfid)) {
         val sessionId = service.startSession(rfid, initialMeterValue)
-        service.startCharging()
+        service.charging()
         log.debug("Going to 'Charging'")
         goto(Charging) using ChargingData(sessionId, initialMeterValue)
       }
