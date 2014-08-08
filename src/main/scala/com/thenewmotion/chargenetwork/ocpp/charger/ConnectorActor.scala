@@ -86,8 +86,4 @@ object ConnectorActor {
   case class ChargingData(transactionId: Int, meterValue: Int) extends Data
 
   case object SendMeterValue
-
-  sealed trait CpProducer
-  case object Alfen extends CpProducer
-  case object Another extends CpProducer
 }

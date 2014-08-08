@@ -15,7 +15,7 @@ import com.thenewmotion.chargenetwork.{ocpp => xb}
 class ConnectorActorSpec extends SpecificationWithJUnit with Mockito {
   "ConnectorActor" should {
 
-    "send occupiedCharging when charging starts in Alfen charger" in new ConnectorActorScope {
+    "send occupiedCharging when charging starts" in new ConnectorActorScope {
       actor.setState(stateName = Connected)
       service.authorize(rfid) returns true
       service.startSession(rfid, ConnectorActor.initialMeterValue) returns 12345
@@ -26,7 +26,7 @@ class ConnectorActorSpec extends SpecificationWithJUnit with Mockito {
       there was one(service).charging()
     }
 
-    "send (simply) occupied when battery full in Alfen charger" in new ConnectorActorScope {
+    "send (simply) occupied when charging stops but conenctor still occupied ('FullyCharged' case)" in new ConnectorActorScope {
       actor.setState(stateName = Charging)
       actor receive FullyCharged
       actor.stateName mustEqual Connected

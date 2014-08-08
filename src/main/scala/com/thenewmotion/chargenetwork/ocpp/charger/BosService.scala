@@ -1,6 +1,5 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
-import com.thenewmotion.chargenetwork.ocpp.charger.ConnectorActor.{Another, Alfen, CpProducer}
 import com.thenewmotion.ocpp.messages._
 import com.thenewmotion.time.Imports._
 import scala.concurrent.duration.FiniteDuration
@@ -41,11 +40,11 @@ trait Common {
 }
 
 object BosService {
-  def apply(chargerId: String, service: CentralSystem, cpProducer: CpProducer): BosService =
-    new BosServiceImpl(chargerId, service, cpProducer)
+  def apply(chargerId: String, service: CentralSystem, chargingNotifications: Boolean = false): BosService =
+    new BosServiceImpl(chargerId, service, chargingNotifications)
 }
 
-class BosServiceImpl(val chargerId: String, protected val service: CentralSystem, cpProducer: CpProducer) extends BosService with Common {
+class BosServiceImpl(val chargerId: String, protected val service: CentralSystem, chargingNotifications: Boolean) extends BosService with Common {
 
   def boot(): FiniteDuration = service(BootNotificationReq(
     chargePointVendor = "The New Motion",
@@ -71,10 +70,10 @@ class BosServiceImpl(val chargerId: String, protected val service: CentralSystem
     service.heartbeat
   }
 
-  def connector(idx: Int) = new ConnectorServiceImpl(service, idx, cpProducer)
+  def connector(idx: Int) = new ConnectorServiceImpl(service, idx, chargingNotifications)
 }
 
-class ConnectorServiceImpl(protected val service: CentralSystem, connectorId: Int, cpProducer: CpProducer) extends ConnectorService with Common {
+class ConnectorServiceImpl(protected val service: CentralSystem, connectorId: Int, chargingNotifications: Boolean) extends ConnectorService with Common {
 
   private val random = new Random()
 
@@ -88,10 +87,9 @@ class ConnectorServiceImpl(protected val service: CentralSystem, connectorId: In
    * This case is covered by this method.
    */
   def charging() {
-    val occupied = cpProducer match {
-      case Alfen => Occupied(Some("Charging"))
-      case Another => Occupied(None)
-    }
+    val occupied = if(chargingNotifications) Occupied(Some("Charging"))
+                   else Occupied(None)
+
     notification(occupied, Some(connectorId))
   }
 

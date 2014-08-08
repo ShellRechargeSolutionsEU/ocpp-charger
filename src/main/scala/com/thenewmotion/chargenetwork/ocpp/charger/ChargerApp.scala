@@ -1,7 +1,6 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
 import akka.actor.Props
-import com.thenewmotion.chargenetwork.ocpp.charger.ConnectorActor.{Alfen, Another, CpProducer}
 import com.thenewmotion.ocpp.Version
 import java.net.URI
 import org.rogach.scallop._
@@ -13,10 +12,6 @@ import java.util.Locale
 object ChargerApp {
 
   def main(args: Array[String]) {
-    implicit val cpProducerConverter = singleArgConverter[CpProducer]{
-      case "Alfen" => Alfen
-      case _ => Another
-    }
     object config extends ScallopConf(args) {
       val chargerId = opt[String]("id", descr = "Charge point ID of emulated charge point", default = Some("00055103978E"))
       val numberOfConnectors = opt[Int]("connectors", descr = "Number of connectors of emulated charge point", default = Some(2))
@@ -24,7 +19,7 @@ object ChargerApp {
       val protocolVersion = opt[String]("protocol-version", descr = "OCPP version (either \"1.2\" or \"1.5\"", default = Some("1.5"))
       val connectionType = opt[String]("connection-type", descr = "whether to use WebSocket/JSON or HTTP/SOAP (either  \"json\" or \"soap\")", default = Some("json"))
       val listenPort = opt[Short]("listen", descr = "TCP port to listen on for remote commands", default = Some(8084.toShort))
-      val cpProducer = opt[CpProducer]("charge-point-producer", descr = "Alfen charger behaviour: distinguish charging and not charging while occupied", default = Some(Another))
+      val chargingNotifications = opt[Boolean]("send-charging-notifications", descr = "notify when charging changes to occupied (only ocpp-j)", default = Some(false))
       val chargeServerUrl = trailArg[String](descr = "Charge server URL base (without trailing slash)", default = Some("http://127.0.0.1:8081/ocppws"))
     }
 
@@ -42,7 +37,7 @@ object ChargerApp {
 
     val url = new URI(config.chargeServerUrl())
     val charger = if (connectionType == Json) {
-      new OcppJsonCharger(config.chargerId(), config.numberOfConnectors(), url, config.cpProducer())
+      new OcppJsonCharger(config.chargerId(), config.numberOfConnectors(), url, config.chargingNotifications())
     } else {
       val server = new ChargerServer(config.listenPort())
       new OcppSoapCharger(config.chargerId(), config.numberOfConnectors(), version, url, server)
