@@ -10,7 +10,7 @@
 
     <groupId>com.thenewmotion.chargenetwork</groupId>
     <artifactId>ocpp-charger_2.10</artifactId>
-    <version>2.1</version>
+    <version>2.2-SNAPSHOT</version>
     <name>OCPP Charger</name>
     <description>Simple ocpp charger simulator</description>
 
