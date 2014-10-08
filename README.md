@@ -41,4 +41,9 @@ See the source file src/main/scala/com/thenewmotion/chargenetwork/ocpp/charger/C
 
 Options can be passed using the a `-Dexec.args="..."` option to Maven, like this:
 
-`mvn exec:java -Dexec.args="--connection-type soap http://localhost:8080/ocppws/"`
+`mvn exec:java -Dexec.args="--connection-type soap http://localhost:8080/ocpp/"`
+
+or
+
+`mvn exec:java -Dexec.args="--connection-type json http://localhost:8080/ocppws/"` 
+
