@@ -25,8 +25,8 @@ JSON API natively it could be more functional and performant.
 ```xml
     <dependency>
             <groupId>com.thenewmotion.chargenetwork</groupId>
-            <artifactId>ocpp-charger_2.9.2</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <artifactId>ocpp-charger_2.10</artifactId>
+            <version>2.2-SNAPSHOT</version>
     </dependency>
 ```
 
@@ -41,4 +41,4 @@ See the source file src/main/scala/com/thenewmotion/chargenetwork/ocpp/charger/C
 
 Options can be passed using the a `-Dexec.args="..."` option to Maven, like this:
 
-`mvn exec:java -Dexec.args="--connection-type soap http://localhost:8080/ocpp/"`
+`mvn exec:java -Dexec.args="--connection-type soap http://localhost:8080/ocppws/"`
