@@ -13,22 +13,22 @@ JSON API natively it could be more functional and performant.
 ## Setup
 
 1. Add this repository to your pom.xml:
-```xml
+    ```xml
     <repository>
         <id>thenewmotion</id>
         <name>The New Motion Repository</name>
         <url>http://nexus.thenewmotion.com/content/repositories/releases-public</url>
     </repository>
-```
+    ```
 
 2. Add dependency to your pom.xml:
-```xml
+    ```xml
     <dependency>
-            <groupId>com.thenewmotion.chargenetwork</groupId>
-            <artifactId>ocpp-charger_2.10</artifactId>
-            <version>2.2-SNAPSHOT</version>
+        <groupId>com.thenewmotion.chargenetwork</groupId>
+        <artifactId>ocpp-charger_2.10</artifactId>
+        <version>2.2-SNAPSHOT</version>
     </dependency>
-```
+    ```
 
 ## Start the charger
 
