@@ -6,9 +6,6 @@ import java.net.URI
 import org.rogach.scallop._
 import java.util.Locale
 
-/**
- * @author Yaroslav Klymko
- */
 object ChargerApp {
 
   def main(args: Array[String]) {

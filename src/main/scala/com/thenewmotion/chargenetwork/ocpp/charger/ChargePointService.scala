@@ -1,6 +1,6 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import com.thenewmotion.ocpp.messages._
 import akka.actor.{Actor, Props, ActorRef}
 import akka.util.Timeout
@@ -14,11 +14,12 @@ import java.nio.charset.Charset
 import com.thenewmotion.time.Imports.DateTime
 import java.text.SimpleDateFormat
 import java.net.URI
+import scala.language.postfixOps
 
 /**
  * Implementation of ChargePointService that just logs each method call on it and does nothing else
  */
-class ChargePointService(chargerId: String, actor: ActorRef) extends ChargePoint with Logging {
+class ChargePointService(chargerId: String, actor: ActorRef) extends ChargePoint with LazyLogging {
   val uploadActor = system.actorOf(Props[Uploader])
 
   def clearCache = ClearCacheRes(accepted = false)
@@ -67,7 +68,7 @@ class ChargePointService(chargerId: String, actor: ActorRef) extends ChargePoint
   }
 }
 
-class Uploader extends Actor with Logging {
+class Uploader extends Actor with LazyLogging {
   def receive = {
     case UploadJob(location, filename) =>
       logger.debug("Uploader being run")

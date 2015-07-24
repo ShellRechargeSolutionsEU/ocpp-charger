@@ -4,10 +4,8 @@ import akka.actor._
 import scala.concurrent.duration._
 import com.thenewmotion.ocpp.messages._
 import scala.concurrent.Future
+import scala.language.postfixOps
 
-/**
- * @author Yaroslav Klymko
- */
 class ChargerActor(service: BosService, numberOfConnectors: Int = 1)
   extends Actor
   with LoggingFSM[ChargerActor.State, ChargerActor.Data] {
@@ -29,7 +27,7 @@ class ChargerActor(service: BosService, numberOfConnectors: Int = 1)
     context.system.scheduler.schedule(1 second, interval, self, Heartbeat)
     scheduleFault()
 
-    (0 until numberOfConnectors).map(startConnector)
+    (0 until numberOfConnectors).foreach(startConnector)
   }
 
   def scheduleFault() {

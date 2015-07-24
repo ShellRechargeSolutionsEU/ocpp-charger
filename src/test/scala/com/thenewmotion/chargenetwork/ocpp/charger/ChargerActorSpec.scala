@@ -1,11 +1,14 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
+import java.util.concurrent.TimeUnit
+
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.specification.Scope
 import org.specs2.mock.Mockito
 import akka.testkit.{TestFSMRef, TestKit}
 import akka.actor.{FSM, ActorSystem}
 import ChargerActor._
+import scala.concurrent.duration.FiniteDuration
 
 /**
  * @author Yaroslav Klymko
@@ -65,6 +68,8 @@ class ChargerActorSpec extends SpecificationWithJUnit with Mockito {
       with Scope {
       val numberOfConnectors = 2
       val service = mock[BosService]
+      service.boot() returns new FiniteDuration(5, TimeUnit.SECONDS)
+
       val actor = TestFSMRef(new TestChargerActor)
       val card = "3E60A5E2"
 

@@ -7,12 +7,13 @@ import akka.pattern.{ask, pipe}
 import akka.util.Timeout
 import com.thenewmotion.ocpp.messages._
 import com.thenewmotion.ocpp.spray.{ChargerInfo, OcppProcessing}
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import _root_.spray.can.Http
 import _root_.spray.http.{HttpResponse, HttpRequest}
 import java.net.URI
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Await, Future}
+import scala.language.postfixOps
 
 class ChargerServer(port: Int) {
 
@@ -51,6 +52,6 @@ class ChargerServer(port: Int) {
   }
 }
 
-object ChargerServer extends Logging {
+object ChargerServer extends LazyLogging {
   case class Register(chargerId: String, cp: ChargePoint)
 }

@@ -1,6 +1,6 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
-import com.typesafe.scalalogging.slf4j.Logging
+import com.typesafe.scalalogging.slf4j.LazyLogging
 import java.net.URI
 import com.thenewmotion.ocpp.messages._
 import scala.concurrent.{Future, Await}
@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import com.thenewmotion.ocpp.json._
 
 @deprecated("Use OcppJsonClient directly instead", since="2.0")
-class JsonCentralSystemClient(chargerId: String, centralSystemUri: URI) extends CentralSystem with Logging {
+class JsonCentralSystemClient(chargerId: String, centralSystemUri: URI) extends CentralSystem with LazyLogging {
 
   val client = new OcppJsonClient(chargerId, centralSystemUri) {
     def onError(err: OcppError) = logger.error(s"Received OCPP error $err")

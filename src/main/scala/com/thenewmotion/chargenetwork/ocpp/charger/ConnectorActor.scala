@@ -2,10 +2,8 @@ package com.thenewmotion.chargenetwork.ocpp.charger
 
 import akka.actor._
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
-/**
- * @author Yaroslav Klymko
- */
 class ConnectorActor(service: ConnectorService)
   extends Actor
   with LoggingFSM[ConnectorActor.State, ConnectorActor.Data] {
