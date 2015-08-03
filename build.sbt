@@ -1,6 +1,6 @@
 val ocppCharger = project
   .in(file("."))
-  .enablePlugins(LibPlugin)
+  .enablePlugins(OssLibPlugin)
   .settings(
     name := "ocpp-charger",
     organization := "com.thenewmotion.chargenetwork",
