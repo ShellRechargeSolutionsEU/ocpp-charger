@@ -9,9 +9,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import com.thenewmotion.ocpp.json._
 
 @deprecated("Use OcppJsonClient directly instead", since="2.0")
-class JsonCentralSystemClient(chargerId: String, centralSystemUri: URI) extends CentralSystem with LazyLogging {
+class JsonCentralSystemClient(chargerId: String, centralSystemUri: URI, messageEncryption: Boolean) extends CentralSystem with LazyLogging {
 
-  val client = new OcppJsonClient(chargerId, centralSystemUri) {
+  val client = new OcppJsonClient(chargerId, centralSystemUri, messageEncryption) {
     def onError(err: OcppError) = logger.error(s"Received OCPP error $err")
 
     def onRequest(req: ChargePointReq) = {

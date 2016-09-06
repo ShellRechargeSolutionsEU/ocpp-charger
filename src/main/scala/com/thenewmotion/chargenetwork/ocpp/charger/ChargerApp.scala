@@ -33,7 +33,7 @@ object ChargerApp {
 
     val url = new URI(config.chargeServerUrl())
     val charger = if (connectionType == Json) {
-      new OcppJsonCharger(config.chargerId(), config.numberOfConnectors(), url)
+      new OcppJsonCharger(config.chargerId(), config.numberOfConnectors(), url, false)
     } else {
       val server = new ChargerServer(config.listenPort())
       new OcppSoapCharger(config.chargerId(), config.numberOfConnectors(), version, url, server)

@@ -25,8 +25,9 @@ class OcppSoapCharger(chargerId: String,
 
 class OcppJsonCharger(chargerId: String,
                        numConnectors: Int,
-                       centralSystemUri: URI) extends OcppCharger {
-  val client: CentralSystem = new JsonCentralSystemClient(chargerId, centralSystemUri)
+                       centralSystemUri: URI,
+                       messageEncryption: Boolean) extends OcppCharger {
+  val client: CentralSystem = new JsonCentralSystemClient(chargerId, centralSystemUri, messageEncryption: Boolean)
   val chargerActor = system.actorOf(Props(new ChargerActor(BosService(chargerId, client), numConnectors)))
 }
 
