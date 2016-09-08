@@ -13,7 +13,7 @@ val ocppCharger = project
       }
 
       val ocpp = {
-        def libs(xs: String*) = xs.map(x => "com.thenewmotion.ocpp" %% s"ocpp-$x" % "4.2.8")
+        def libs(xs: String*) = xs.map(x => "com.thenewmotion.ocpp" %% s"ocpp-$x" % "4.2.8-SNAPSHOT")
         libs("spray", "json")
       }
 

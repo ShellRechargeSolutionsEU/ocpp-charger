@@ -17,6 +17,7 @@ object ChargerApp {
       val connectionType = opt[String]("connection-type", descr = "whether to use WebSocket/JSON or HTTP/SOAP (either  \"json\" or \"soap\")", default = Some("json"))
       val listenPort = opt[Short]("listen", descr = "TCP port to listen on for remote commands", default = Some(8084.toShort))
       val chargeServerUrl = trailArg[String](descr = "Charge server URL base (without trailing slash)", default = Some("http://127.0.0.1:8081/ocppws"))
+      val aesEncryption = opt[Boolean]("aes-encryption", descr = "enable aes encryption", default = Some(false))
     }
 
     val version = try {
@@ -33,7 +34,7 @@ object ChargerApp {
 
     val url = new URI(config.chargeServerUrl())
     val charger = if (connectionType == Json) {
-      new OcppJsonCharger(config.chargerId(), config.numberOfConnectors(), url, false)
+      new OcppJsonCharger(config.chargerId(), config.numberOfConnectors(), url, config.aesEncryption())
     } else {
       val server = new ChargerServer(config.listenPort())
       new OcppSoapCharger(config.chargerId(), config.numberOfConnectors(), version, url, server)
