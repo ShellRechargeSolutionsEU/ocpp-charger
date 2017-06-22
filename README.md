@@ -46,3 +46,10 @@ or
 
 `sbt "run --connection-type json http://localhost:8080/ocppws/"` 
 
+with basic authentication (ocpp-json only):
+
+`sbt "run --id 01234567 --auth-password abcdef1234abcdef1234abcdef1234abcdef1234 ws://localhost:8017/ocppws/"`
+
+with basic authentication and a specific ssl certificate (ocpp-json only):
+
+`sbt "run --id 01234567 --auth-password abcdef1234abcdef1234abcdef1234abcdef1234 --keystore-file ./trust.jks --keystore-password my-beautiful-password wss://test-cn-node-internet.thenewmotion.com/ocppws/"`
