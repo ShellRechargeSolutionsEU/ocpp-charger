@@ -3,8 +3,10 @@ package com.thenewmotion.chargenetwork.ocpp.charger
 import akka.actor.Props
 import com.thenewmotion.ocpp.Version
 import java.net.URI
+
 import org.rogach.scallop._
 import java.util.Locale
+import javax.net.ssl.SSLContext
 
 object ChargerApp {
 
@@ -16,7 +18,10 @@ object ChargerApp {
       val protocolVersion = opt[String]("protocol-version", descr = "OCPP version (either \"1.2\" or \"1.5\"", default = Some("1.5"))
       val connectionType = opt[String]("connection-type", descr = "whether to use WebSocket/JSON or HTTP/SOAP (either  \"json\" or \"soap\")", default = Some("json"))
       val listenPort = opt[Short]("listen", descr = "TCP port to listen on for remote commands", default = Some(8084.toShort))
-      val chargeServerUrl = trailArg[String](descr = "Charge server URL base (without trailing slash)", default = Some("http://127.0.0.1:8081/ocppws"))
+      val authPassword = opt[String]("auth-password", descr = "set basic auth password", default = None)
+      val keystoreFile = opt[String]("keystore-file", descr = "keystore file for ssl", default = None)
+      val keystorePassword = opt[String]("keystore-password", descr = "keystore password", default = Some(""))
+      val chargeServerUrl = trailArg[String](descr = "Charge server URL base (without trailing slash)", default = Some("http://127.0.0.1:8080/ocppws"))
     }
 
     val version = try {
@@ -33,10 +38,26 @@ object ChargerApp {
 
     val url = new URI(config.chargeServerUrl())
     val charger = if (connectionType == Json) {
-      new OcppJsonCharger(config.chargerId(), config.numberOfConnectors(), url)
+      new OcppJsonCharger(
+        config.chargerId(),
+        config.numberOfConnectors(),
+        url,
+        config.authPassword.get
+      )(config.keystoreFile.get.fold(SSLContext.getDefault) { keystoreFile =>
+        SslContext(
+          keystoreFile,
+          config.keystorePassword()
+        )
+      })
     } else {
       val server = new ChargerServer(config.listenPort())
-      new OcppSoapCharger(config.chargerId(), config.numberOfConnectors(), version, url, server)
+      new OcppSoapCharger(
+        config.chargerId(),
+        config.numberOfConnectors(),
+        version,
+        url,
+        server
+      )
     }
 
     (0 until config.numberOfConnectors()) map {

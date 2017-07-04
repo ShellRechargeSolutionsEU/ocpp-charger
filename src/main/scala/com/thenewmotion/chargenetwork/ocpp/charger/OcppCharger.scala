@@ -1,6 +1,8 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
 import java.net.URI
+import javax.net.ssl.SSLContext
+
 import dispatch.Http
 import akka.actor.{ActorRef, Props}
 import com.thenewmotion.ocpp.soap.CentralSystemClient
@@ -25,8 +27,10 @@ class OcppSoapCharger(chargerId: String,
 
 class OcppJsonCharger(chargerId: String,
                        numConnectors: Int,
-                       centralSystemUri: URI) extends OcppCharger {
-  val client: CentralSystem = new JsonCentralSystemClient(chargerId, centralSystemUri)
+                       centralSystemUri: URI,
+                       authPassword: Option[String])(
+                       implicit sslContext: SSLContext = SSLContext.getDefault)
+                       extends OcppCharger {
+  val client: CentralSystem = new JsonCentralSystemClient(chargerId, centralSystemUri, authPassword)
   val chargerActor = system.actorOf(Props(new ChargerActor(BosService(chargerId, client), numConnectors)))
 }
-
