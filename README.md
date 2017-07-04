@@ -26,7 +26,7 @@ JSON API natively it could be more functional and performant.
     <dependency>
         <groupId>com.thenewmotion.chargenetwork</groupId>
         <artifactId>ocpp-charger_2.10</artifactId>
-        <version>2.2-SNAPSHOT</version>
+        <version>2.6</version>
     </dependency>
     ```
 
