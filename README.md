@@ -53,3 +53,15 @@ with basic authentication (ocpp-json only):
 with basic authentication and a specific ssl certificate (ocpp-json only):
 
 `sbt "run --id 01234567 --auth-password abcdef1234abcdef1234abcdef1234abcdef1234 --keystore-file ./trust.jks --keystore-password my-beautiful-password wss://test-cn-node-internet.thenewmotion.com/ocppws/"`
+
+The password is given in a hex-encoded form. If you have a plain text password, you can quickly encode it in hex as follows:
+
+```
+$ scala                                                                                                                                                                                                                         [13:19:11]
+Welcome to Scala 2.12.1 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_51).
+Type in expressions for evaluation. Or try :help.
+
+scala> "mypasswordof20chars!".getBytes("US-ASCII").map("%02x".format(_)).mkString
+res1: String = 6d7970617373776f72646f663230636861727321
+
+```
