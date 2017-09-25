@@ -11,7 +11,7 @@ import java.util.concurrent.TimeoutException
 import org.apache.commons.net.ftp.FTPSClient
 import java.io.ByteArrayInputStream
 import java.nio.charset.Charset
-import com.thenewmotion.time.Imports.DateTime
+import java.time.ZonedDateTime
 import java.text.SimpleDateFormat
 import java.net.URI
 import scala.language.postfixOps
@@ -24,11 +24,14 @@ class ChargePointService(chargerId: String, actor: ActorRef) extends ChargePoint
 
   def clearCache = ClearCacheRes(accepted = false)
 
-  def remoteStartTransaction(req: RemoteStartTransactionReq) = RemoteStartTransactionRes(accepted = false)
+  def remoteStartTransaction(req: RemoteStartTransactionReq) =
+    RemoteStartTransactionRes(accepted = false)
 
-  def remoteStopTransaction(req: RemoteStopTransactionReq) = RemoteStopTransactionRes(accepted = false)
+  def remoteStopTransaction(req: RemoteStopTransactionReq) =
+    RemoteStopTransactionRes(accepted = false)
 
-  def unlockConnector(req: UnlockConnectorReq) = UnlockConnectorRes(accepted = false)
+  def unlockConnector(req: UnlockConnectorReq) =
+    UnlockConnectorRes(UnlockStatus.UnlockFailed)
 
   def getDiagnostics(req: GetDiagnosticsReq) = {
     val fileName = "test-getdiagnostics-upload"
@@ -36,17 +39,20 @@ class ChargePointService(chargerId: String, actor: ActorRef) extends ChargePoint
     GetDiagnosticsRes(Some(fileName))
   }
 
-  def changeConfiguration(req: ChangeConfigurationReq) = ChangeConfigurationRes(ConfigurationStatus.NotSupported)
+  def changeConfiguration(req: ChangeConfigurationReq) =
+    ChangeConfigurationRes(ConfigurationStatus.NotSupported)
 
   def getConfiguration(req: GetConfigurationReq) = GetConfigurationRes(Nil, req.keys)
 
-  def changeAvailability(req: ChangeAvailabilityReq) = ChangeAvailabilityRes(AvailabilityStatus.Rejected)
+  def changeAvailability(req: ChangeAvailabilityReq) =
+    ChangeAvailabilityRes(AvailabilityStatus.Rejected)
 
   def reset(req: ResetReq) = ResetRes(accepted = false)
 
   def updateFirmware(req: UpdateFirmwareReq) {}
 
-  def sendLocalList(req: SendLocalListReq) = SendLocalListRes(UpdateStatus.NotSupportedValue)
+  def sendLocalList(req: SendLocalListReq) =
+    SendLocalListRes(UpdateStatusWithoutHash.NotSupported)
 
   def getLocalListVersion = GetLocalListVersionRes(AuthListNotSupported)
 
@@ -55,6 +61,14 @@ class ChargePointService(chargerId: String, actor: ActorRef) extends ChargePoint
   def reserveNow(req: ReserveNowReq) = ReserveNowRes(Reservation.Rejected)
 
   def cancelReservation(req: CancelReservationReq) = CancelReservationRes(accepted = false)
+
+  def clearChargingProfile(req: ClearChargingProfileReq) = ClearChargingProfileRes(ClearChargingProfileStatus.Accepted)
+
+  def getCompositeSchedule(req: GetCompositeScheduleReq) = GetCompositeScheduleRes(CompositeScheduleStatus.Rejected)
+
+  def setChargingProfile(req: SetChargingProfileReq)= SetChargingProfileRes(ChargingProfileStatus.Accepted)
+
+  def triggerMessage(req: TriggerMessageReq) = TriggerMessageRes(TriggerMessageStatus.NotImplemented)
 
   override def apply[REQ <: ChargePointReq, RES <:ChargePointRes](req: REQ)
                                                                  (implicit reqRes: ChargePointReqRes[REQ, RES]) = {
@@ -79,7 +93,7 @@ class Uploader extends Actor with LazyLogging {
         val userAndPasswd = authPart.split("@")(0).split(":")
         val loggedIn = client.login(userAndPasswd(0), userAndPasswd(1))
         logger.debug(if (loggedIn) "Uploader logged in" else "FTP login failed")
-        val dateTimeString = new SimpleDateFormat("yyyyMMddHHmmssz").format(DateTime.now.toDate)
+        val dateTimeString = new SimpleDateFormat("yyyyMMddHHmmssz").format(ZonedDateTime.now)
         val remoteName = s"${location.getPath}/$filename.$dateTimeString"
         client.enterLocalPassiveMode()
         logger.debug(s"Storing file at $remoteName")

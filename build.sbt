@@ -6,6 +6,8 @@ val ocppCharger = project
     organization := "com.thenewmotion.chargenetwork",
     description := "OCPP Charger Simulator",
 
+    scalaVersion := tnm.ScalaVersion.prev,
+
     libraryDependencies ++= {
       val log = {
         Seq("ch.qos.logback" % "logback-classic" % "1.1.3",
@@ -13,8 +15,8 @@ val ocppCharger = project
       }
 
       val ocpp = {
-        def libs(xs: String*) = xs.map(x => "com.thenewmotion.ocpp" %% s"ocpp-$x" % "4.3.0")
-        libs("spray", "json")
+        def libs(xs: String*) = xs.map(x => "com.thenewmotion.ocpp" %% s"ocpp-$x" % "5.1-SNAPSHOT")
+        libs("spray", "json", "j-server-client-api")
       }
 
       val spray = {

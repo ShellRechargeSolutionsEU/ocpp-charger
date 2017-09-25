@@ -1,13 +1,10 @@
 package com.thenewmotion.chargenetwork.ocpp.charger
 
 import com.thenewmotion.ocpp.messages._
-import com.thenewmotion.time.Imports._
+import java.time._
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Random
 
-/**
- * @author Yaroslav Klymko
- */
 trait BosService {
   def chargerId: String
   def fault()
@@ -33,7 +30,7 @@ trait Common {
     service(StatusNotificationReq(
       connector.map(ConnectorScope.apply) getOrElse ChargePointScope,
       status,
-      Some(DateTime.now),
+      Some(ZonedDateTime.now),
       None))
   }
 }
@@ -53,16 +50,20 @@ class BosServiceImpl(val chargerId: String, protected val service: CentralSystem
     firmwareVersion = Some("0.1"),
     iccid = None,
     imsi = None, meterType = None,
-    meterSerialNumber = None)).heartbeatInterval
+    meterSerialNumber = None)).interval
 
   private val errorCodes = ErrorCodes().iterator
 
   def fault() {
-    notification(Faulted(Some(errorCodes.next()), Some("Random code"), Some("Random code")))
+    notification(ChargePointStatus.Faulted(
+      Some(errorCodes.next()),
+      Some("Random code"),
+      Some("Random code")
+    ))
   }
 
   def available() {
-    notification(Available())
+    notification(ChargePointStatus.Available())
   }
 
   def heartbeat() {
@@ -78,27 +79,48 @@ class ConnectorServiceImpl(protected val service: CentralSystem, connectorId: In
 
   def occupied() {
     random.nextBoolean() match {
-      case true => notification(Occupied(Some("Charging")), Some(connectorId))
-      case false => notification(Occupied(None), Some(connectorId))
+      case true => notification(
+        ChargePointStatus.Occupied(
+          Some(OccupancyKind.Charging)
+        ),
+        Some(connectorId)
+      )
+      case false =>
+        notification(ChargePointStatus.Occupied(None), Some(connectorId))
     }
 
   }
 
   def available() {
-    notification(Available(), Some(connectorId))
+    notification(ChargePointStatus.Available(), Some(connectorId))
   }
 
   def authorize(card: String) = service(AuthorizeReq(card)).idTag.status == AuthorizationStatus.Accepted
 
   def startSession(card: String, meterValue: Int) =
-    service(StartTransactionReq(ConnectorScope(connectorId), card, DateTime.now, meterValue, None)).transactionId
+    service(StartTransactionReq(
+      ConnectorScope(connectorId),
+      card,
+      ZonedDateTime.now,
+      meterValue,
+      None)
+    ).transactionId
 
   def meterValue(transactionId: Int, meterValue: Int) {
-    val meter = Meter(DateTime.now, List(Meter.DefaultValue(meterValue)))
-    service(MeterValuesReq(ConnectorScope(connectorId), Some(transactionId), List(meter)))
+    val m = meter.Meter(
+      ZonedDateTime.now,
+      List(meter.DefaultValue(meterValue))
+    )
+    service(MeterValuesReq(ConnectorScope(connectorId), Some(transactionId), List(m)))
   }
 
   def stopSession(card: Option[String], transactionId: Int, meterValue: Int): Boolean =
-    service(StopTransactionReq(transactionId, card, DateTime.now, meterValue, Nil))
-      .idTag.exists(_.status == AuthorizationStatus.Accepted)
+    service(StopTransactionReq(
+      transactionId,
+      card,
+      ZonedDateTime.now,
+      meterValue,
+      meters = Nil,
+      reason = StopReason.Local
+    )).idTag.exists(_.status == AuthorizationStatus.Accepted)
 }

@@ -21,14 +21,14 @@ object ChargerApp {
       val authPassword = opt[String]("auth-password", descr = "set basic auth password", default = None)
       val keystoreFile = opt[String]("keystore-file", descr = "keystore file for ssl", default = None)
       val keystorePassword = opt[String]("keystore-password", descr = "keystore password", default = Some(""))
+      val wsSubprotocol = opt[String]("websocket-subprotocol", descr="WebSocket subprotocol (ocpp1.5 or ocpp1.6)", default = Some("ocpp1.6"))
       val chargeServerUrl = trailArg[String](descr = "Charge server URL base (without trailing slash)", default = Some("http://127.0.0.1:8080/ocppws"))
     }
 
-    val version = try {
-      Version.withName(config.protocolVersion())
-    } catch {
-      case e: NoSuchElementException => sys.error(s"Unknown protocol version ${config.protocolVersion()}")
-    }
+    val version = Version.withName(config.protocolVersion()) match {
+    case None => sys.error(s"Unknown protocol version ${config.protocolVersion()}")
+    case Some(v) => v
+  }
 
     val connectionType: ConnectionType = config.connectionType().toLowerCase(Locale.ENGLISH) match {
       case "json" => Json
@@ -42,7 +42,8 @@ object ChargerApp {
         config.chargerId(),
         config.numberOfConnectors(),
         url,
-        config.authPassword.get
+        config.authPassword.get,
+        config.wsSubprotocol.get.get
       )(config.keystoreFile.get.fold(SSLContext.getDefault) { keystoreFile =>
         SslContext(
           keystoreFile,

@@ -15,7 +15,7 @@ trait OcppCharger {
 
 class OcppSoapCharger(chargerId: String,
                   numConnectors: Int,
-                  ocppVersion: Version.Value,
+                  ocppVersion: Version,
                   centralSystemUri: URI,
                   server: ChargerServer,
                   http: Http = new Http) extends OcppCharger {
@@ -26,11 +26,12 @@ class OcppSoapCharger(chargerId: String,
 }
 
 class OcppJsonCharger(chargerId: String,
-                       numConnectors: Int,
-                       centralSystemUri: URI,
-                       authPassword: Option[String])(
-                       implicit sslContext: SSLContext = SSLContext.getDefault)
-                       extends OcppCharger {
-  val client: CentralSystem = new JsonCentralSystemClient(chargerId, centralSystemUri, authPassword)
+                      numConnectors: Int,
+                      centralSystemUri: URI,
+                      authPassword: Option[String],
+                      protocol: String)(
+                      implicit sslContext: SSLContext = SSLContext.getDefault)
+                      extends OcppCharger {
+  val client: CentralSystem = new JsonCentralSystemClient(chargerId, centralSystemUri, authPassword, protocol)
   val chargerActor = system.actorOf(Props(new ChargerActor(BosService(chargerId, client), numConnectors)))
 }

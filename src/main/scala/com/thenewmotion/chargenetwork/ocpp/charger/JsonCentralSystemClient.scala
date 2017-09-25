@@ -1,23 +1,25 @@
-package com.thenewmotion.chargenetwork.ocpp.charger
+package com.thenewmotion.chargenetwork.ocpp
+package charger
 
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import java.net.URI
 import javax.net.ssl.SSLContext
 
+import com.thenewmotion.ocpp.json.PayloadErrorCode
 import com.thenewmotion.ocpp.messages._
+import com.thenewmotion.ocpp.json.api.{OcppJsonClient, OcppError, OcppException}
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
-import com.thenewmotion.ocpp.json._
 
 @deprecated("Use OcppJsonClient directly instead", since="2.0")
-class JsonCentralSystemClient(chargerId: String, centralSystemUri: URI, authPassword: Option[String])(implicit sslContext: SSLContext = SSLContext.getDefault) extends CentralSystem with LazyLogging {
+class JsonCentralSystemClient(chargerId: String, centralSystemUri: URI, authPassword: Option[String], protocol: String)(implicit sslContext: SSLContext = SSLContext.getDefault) extends CentralSystem with LazyLogging {
 
-  val client = new OcppJsonClient(chargerId, centralSystemUri, authPassword) {
+  val client = new OcppJsonClient(chargerId, centralSystemUri, authPassword, protocol) {
     def onError(err: OcppError) = logger.error(s"Received OCPP error $err")
 
-    def onRequest(req: ChargePointReq) = {
+    def onRequest[REQ <: ChargePointReq, RES <: ChargePointRes](req: REQ)(implicit reqRes: ReqRes[REQ, RES]): Future[RES] = {
       logger.warn("Received OCPP request {} but request handling not implemented for OCPP-J", req)
       Future { throw new OcppException(OcppError(PayloadErrorCode.NotImplemented, "not implemented")) }
     }

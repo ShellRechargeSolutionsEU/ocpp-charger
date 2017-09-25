@@ -64,9 +64,9 @@ class ChargerActor(service: BosService, numberOfConnectors: Int = 1)
       sender ! GetLocalListVersionRes(localAuthList.version)
       stay()
 
-    case Event(SendLocalListReq(updateType: UpdateType.Value, version, localAuthorisationList, _), _) =>
+    case Event(SendLocalListReq(updateType: UpdateType, version, localAuthorisationList, _), _) =>
 
-      import UpdateStatus._
+      import UpdateStatusWithoutHash._
       val status = if (version.version <= localAuthList.version.version) VersionMismatch
       else {
         localAuthList = LocalAuthList(
@@ -81,7 +81,7 @@ class ChargerActor(service: BosService, numberOfConnectors: Int = 1)
               case (data, AuthorisationRemove(idTag)) => data - idTag
             }
           })
-        UpdateAccepted(None)
+        UpdateStatusWithHash.Accepted(None)
       }
 
       sender ! SendLocalListRes(status)
