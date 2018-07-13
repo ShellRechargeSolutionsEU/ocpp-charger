@@ -24,6 +24,8 @@ object ChargerApp {
       val chargeServerUrl = trailArg[String](descr = "Charge server URL base (without trailing slash)", default = Some("http://127.0.0.1:8080/ocppws"))
     }
 
+    config.verify()
+
     val version = try {
       Version.withName(config.protocolVersion())
     } catch {
