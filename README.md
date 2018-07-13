@@ -65,3 +65,7 @@ scala> "mypasswordof20chars!".getBytes("US-ASCII").map("%02x".format(_)).mkStrin
 res1: String = 6d7970617373776f72646f663230636861727321
 
 ```
+
+## License
+
+© 2012 - 2017 The New Motion B.V. Licensed under the terms of the [GPL version 3](LICENSE).
