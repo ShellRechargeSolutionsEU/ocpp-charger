@@ -12,14 +12,7 @@ JSON API natively it could be more functional and performant.
 
 ## Setup
 
-1. Add this repository to your pom.xml:
-    ```xml
-    <repository>
-        <id>thenewmotion</id>
-        <name>The New Motion Repository</name>
-        <url>http://nexus.thenewmotion.com/content/repositories/releases-public</url>
-    </repository>
-    ```
+1. Compile and publish the library locally
 
 2. Add dependency to your pom.xml:
     ```xml

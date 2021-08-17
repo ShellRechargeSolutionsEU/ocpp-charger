@@ -1,14 +1,13 @@
 val ocppCharger = project
   .in(file("."))
-  .enablePlugins(OssLibPlugin)
   .settings(
     name := "ocpp-charger",
     organization := "com.thenewmotion.chargenetwork",
     description := "OCPP Charger Simulator",
 
-    scalaVersion := tnm.ScalaVersion.prev,
+    scalaVersion := "2.11.11",
 
-    crossScalaVersions := Seq(tnm.ScalaVersion.prev),
+    crossScalaVersions := Seq("2.11.11"),
 
     libraryDependencies ++= {
       val log = {
